@@ -30,6 +30,7 @@ export interface TrainingRecord {
   fechaFin: string | null;
   fechaReal: string | null;
   desarrollador: string | null;
+  notas: string | null;
 }
 
 export const fetchGoogleSheetData = async (): Promise<TrainingRecord[]> => {
@@ -68,6 +69,7 @@ export const fetchGoogleSheetData = async (): Promise<TrainingRecord[]> => {
             fechaFin: row.c[6] ? String(row.c[6].v) : null,
             fechaReal: row.c[7] ? String(row.c[7].v) : null,
             desarrollador: row.c[8] ? String(row.c[8].v) : null,
+            notas: row.c[9] ? String(row.c[9].v) : null,
           };
         });
 

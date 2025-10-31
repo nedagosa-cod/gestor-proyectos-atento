@@ -6,12 +6,22 @@ export default function Navbar() {
       <ul className="flex gap-6">
         <li>
           <Link to="/" className="text-white hover:text-gray-300">
-            Home
+            Inicio
           </Link>
         </li>
         <li>
           <Link to="/simulator" className="text-white hover:text-gray-300">
             Simulator
+          </Link>
+        </li>
+        <li>
+          <Link to="/simulator" className="text-white hover:text-gray-300">
+            Web Training
+          </Link>
+        </li>
+        <li>
+          <Link to="/simulator" className="text-white hover:text-gray-300">
+            Metaverso
           </Link>
         </li>
       </ul>

@@ -19,10 +19,19 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface CalendarProps {
   data: TrainingRecord[];
+  currentMonth: Date;
+  setCurrentMonth: (date: Date) => void;
+  selectedDay: Date | null;
+  setSelectedDay: (date: Date | null) => void;
 }
 
-export default function Calendar({ data }: CalendarProps) {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+export default function Calendar({
+  data,
+  currentMonth,
+  setCurrentMonth,
+  selectedDay,
+  setSelectedDay,
+}: CalendarProps) {
   const [selectedEvent, setSelectedEvent] = useState<TrainingRecord | null>(
     null
   );
@@ -98,10 +107,10 @@ export default function Calendar({ data }: CalendarProps) {
   const developerColors = [
     "bg-blue-500",
     "bg-green-500",
-    "bg-purple-500",
     "bg-pink-500",
     "bg-indigo-500",
     "bg-red-500",
+    "bg-purple-500",
     "bg-yellow-500",
     "bg-teal-500",
     "bg-orange-500",
@@ -155,27 +164,27 @@ export default function Calendar({ data }: CalendarProps) {
   return (
     <div className="w-full h-full flex flex-col">
       {/* Header del calendario */}
-      <div className="flex items-center justify-between mb-6 px-4">
-        <h2 className="text-2xl font-bold">
+      <div className="flex items-center justify-between mb-8 px-4">
+        <h2 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent capitalize">
           {format(currentMonth, "MMMM yyyy", { locale: es })}
         </h2>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <button
             onClick={prevMonth}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-3 bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-lg transition-all hover:shadow-lg transform hover:scale-105"
             aria-label="Mes anterior"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <button
             onClick={() => setCurrentMonth(new Date())}
-            className="px-4 py-2 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+            className="px-6 py-3 bg-linear-to-r from-purple-500 to-pink-600 text-white rounded-lg transition-all hover:shadow-lg transform hover:scale-105 font-bold"
           >
             Hoy
           </button>
           <button
             onClick={nextMonth}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-3 bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-lg transition-all hover:shadow-lg transform hover:scale-105"
             aria-label="Mes siguiente"
           >
             <ChevronRight className="w-5 h-5" />
@@ -186,11 +195,11 @@ export default function Calendar({ data }: CalendarProps) {
       {/* Grid del calendario */}
       <div className="flex-1 flex flex-col">
         {/* Días de la semana */}
-        <div className="grid grid-cols-6 gap-1 mb-2">
+        <div className="grid grid-cols-6 gap-2 mb-4">
           {weekDays.map((day) => (
             <div
               key={day}
-              className="text-center font-semibold text-sm text-gray-600 py-2"
+              className="text-center font-bold text-sm text-white bg-linear-to-r from-blue-500 to-indigo-600 py-3 rounded-lg shadow-md"
             >
               {day}
             </div>
@@ -198,7 +207,7 @@ export default function Calendar({ data }: CalendarProps) {
         </div>
 
         {/* Días del mes */}
-        <div className="grid grid-cols-6 gap-1 flex-1">
+        <div className="grid grid-cols-6 gap-3 flex-1">
           {days.map((day) => {
             const eventsForDay = getEventsForDate(day);
             const isCurrentMonth = isSameMonth(day, currentMonth);
@@ -207,53 +216,70 @@ export default function Calendar({ data }: CalendarProps) {
             return (
               <div
                 key={day.toString()}
+                onClick={() => setSelectedDay(day)}
                 className={`
-                  border rounded-lg p-2 min-h-[100px] flex flex-col
-                  ${isCurrentMonth ? "bg-white" : "bg-gray-50"}
-                  ${isCurrentDay ? "ring-2 ring-blue-500" : ""}
+                  border-2 rounded-xl p-3 min-h-[100px] flex flex-col cursor-pointer
+                  transition-all hover:shadow-xl transform hover:scale-105
+                  ${
+                    isCurrentMonth
+                      ? "bg-white border-gray-200"
+                      : "bg-gray-100 border-gray-300"
+                  }
+                  ${isCurrentDay ? "ring-4 ring-blue-400 shadow-lg" : ""}
+                  ${
+                    selectedDay &&
+                    format(selectedDay, "yyyy-MM-dd") ===
+                      format(day, "yyyy-MM-dd")
+                      ? "ring-4 ring-purple-400 shadow-lg"
+                      : ""
+                  }
                 `}
               >
                 <div
                   className={`
-                    text-sm font-medium mb-1
-                    ${isCurrentMonth ? "text-gray-900" : "text-gray-400"}
-                    ${isCurrentDay ? "text-blue-600 font-bold" : ""}
+                    text-sm font-bold mb-2 flex items-center justify-center w-7 h-7 rounded-full
+                    ${isCurrentMonth ? "text-gray-900" : "text-gray-500"}
+                    ${
+                      isCurrentDay
+                        ? "bg-linear-to-r from-blue-500 to-indigo-600 text-white"
+                        : ""
+                    }
                   `}
                 >
                   {format(day, "d")}
                 </div>
 
                 {/* Eventos del día */}
-                <div className="flex-1 overflow-y-auto">
-                  <div className="grid grid-cols-3 gap-1">
+                <div className="flex-1">
+                  <div className="grid grid-cols-3 gap-1 px-2">
                     {eventsForDay.slice(0, 6).map((event, idx) => (
                       <button
                         key={idx}
                         onClick={() => setSelectedEvent(event)}
                         className={`
-                          text-left text-[10px] px-1.5 py-1 rounded flex justify-between
+                          text-left text-[10px] px-2 py-1.5 rounded-lg flex justify-between items-center
                           ${getDeveloperColor(event.desarrollador)} text-white
-                          hover:opacity-80 transition-opacity
+                          hover:opacity-90 transition-all shadow-md hover:shadow-lg transform hover:scale-105 
                           truncate
                         `}
                         title={`${event.campana || "Sin campaña"} - ${
                           event.nombreProceso || "Sin proceso"
                         }`}
                       >
-                        <p className="w-4/5 overflow-hidden text-ellipsis whitespace-nowrap">
+                        <p className="w-4/5 overflow-hidden text-ellipsis whitespace-nowrap font-semibold">
                           {event.campana || "Sin dev"}
                         </p>
                         <div
-                          className={`rounded-full ring-1 ring-amber-50 ${getStatusColor(
+                          className={`rounded-full ring-2 ring-white ${getStatusColor(
                             event.estado
-                          )} w-1 h-1`}
+                          )} w-2 h-2 shadow-sm`}
                         ></div>
                       </button>
                     ))}
                   </div>
                   {eventsForDay.length > 6 && (
-                    <div className="text-xs text-gray-500 text-center mt-1">
-                      +{eventsForDay.length - 4} más
+                    <div className="text-xs font-bold text-gray-700 text-center mt-2 bg-gray-100 rounded py-1">
+                      +{eventsForDay.length - 6} más
                     </div>
                   )}
                 </div>
@@ -266,43 +292,53 @@ export default function Calendar({ data }: CalendarProps) {
       {/* Modal de detalle del evento */}
       {selectedEvent && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={() => setSelectedEvent(null)}
         >
           <div
-            className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+            className="bg-white rounded-2xl p-8 max-w-3xl w-full max-h-[80vh] overflow-y-auto shadow-2xl border-2 border-gray-100"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-bold">
+            <div className="flex justify-between items-start mb-6">
+              <h3 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 {selectedEvent.nombreProceso || "Sin nombre"}
               </h3>
               <button
                 onClick={() => setSelectedEvent(null)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full w-10 h-10 flex items-center justify-center transition-all text-xl"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {selectedEvent.campana && (
-                <div>
-                  <span className="font-semibold">Campaña:</span>{" "}
-                  {selectedEvent.campana}
+                <div className="bg-linear-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+                  <span className="font-bold text-blue-900 text-sm uppercase tracking-wide">
+                    Campaña
+                  </span>
+                  <p className="text-gray-800 font-semibold text-lg mt-1">
+                    {selectedEvent.campana}
+                  </p>
                 </div>
               )}
               {selectedEvent.coordinador && (
-                <div>
-                  <span className="font-semibold">Coordinador:</span>{" "}
-                  {selectedEvent.coordinador}
+                <div className="bg-linear-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
+                  <span className="font-bold text-purple-900 text-sm uppercase tracking-wide">
+                    Coordinador
+                  </span>
+                  <p className="text-gray-800 font-semibold text-lg mt-1">
+                    {selectedEvent.coordinador}
+                  </p>
                 </div>
               )}
               {selectedEvent.desarrollador && (
-                <div>
-                  <span className="font-semibold">Desarrollador:</span>{" "}
+                <div className="bg-linear-to-r from-green-50 to-teal-50 rounded-xl p-4 border border-green-200">
+                  <span className="font-bold text-green-900 text-sm uppercase tracking-wide mb-2 block">
+                    Desarrollador
+                  </span>
                   <span
-                    className={`inline-block px-2 py-1 rounded text-white text-sm ${getDeveloperColor(
+                    className={`inline-block px-4 py-2 rounded-lg text-white font-bold text-base shadow-md ${getDeveloperColor(
                       selectedEvent.desarrollador
                     )}`}
                   >
@@ -311,16 +347,22 @@ export default function Calendar({ data }: CalendarProps) {
                 </div>
               )}
               {selectedEvent.aplicativo && (
-                <div>
-                  <span className="font-semibold">Aplicativo:</span>{" "}
-                  {selectedEvent.aplicativo}
+                <div className="bg-linear-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-200">
+                  <span className="font-bold text-yellow-900 text-sm uppercase tracking-wide">
+                    Aplicativo
+                  </span>
+                  <p className="text-gray-800 font-semibold text-lg mt-1">
+                    {selectedEvent.aplicativo}
+                  </p>
                 </div>
               )}
               {selectedEvent.estado && (
-                <div>
-                  <span className="font-semibold">Estado:</span>{" "}
+                <div className="bg-linear-to-r from-gray-50 to-slate-50 rounded-xl p-4 border border-gray-200">
+                  <span className="font-bold text-gray-900 text-sm uppercase tracking-wide mb-2 block">
+                    Estado
+                  </span>
                   <span
-                    className={`inline-block px-2 py-1 rounded text-white text-sm ${getStatusColor(
+                    className={`inline-block px-4 py-2 rounded-lg text-white font-bold text-base shadow-md ${getStatusColor(
                       selectedEvent.estado
                     )}`}
                   >
@@ -328,22 +370,46 @@ export default function Calendar({ data }: CalendarProps) {
                   </span>
                 </div>
               )}
-              {selectedEvent.fechaInicio && (
-                <div>
-                  <span className="font-semibold">Fecha Inicio:</span>{" "}
-                  {selectedEvent.fechaInicio}
-                </div>
-              )}
-              {selectedEvent.fechaFin && (
-                <div>
-                  <span className="font-semibold">Fecha Fin:</span>{" "}
-                  {selectedEvent.fechaFin}
-                </div>
-              )}
-              {selectedEvent.fechaReal && (
-                <div>
-                  <span className="font-semibold">Fecha Real:</span>{" "}
-                  {selectedEvent.fechaReal}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                {selectedEvent.fechaInicio && (
+                  <div className="bg-white rounded-xl p-4 border-2 border-blue-300 shadow-md">
+                    <span className="font-bold text-blue-900 text-xs uppercase tracking-wide block mb-2">
+                      📅 Fecha Inicio
+                    </span>
+                    <p className="text-gray-800 font-semibold">
+                      {selectedEvent.fechaInicio}
+                    </p>
+                  </div>
+                )}
+                {selectedEvent.fechaFin && (
+                  <div className="bg-white rounded-xl p-4 border-2 border-red-300 shadow-md">
+                    <span className="font-bold text-red-900 text-xs uppercase tracking-wide block mb-2">
+                      📅 Fecha Fin
+                    </span>
+                    <p className="text-gray-800 font-semibold">
+                      {selectedEvent.fechaFin}
+                    </p>
+                  </div>
+                )}
+                {selectedEvent.fechaReal && (
+                  <div className="bg-white rounded-xl p-4 border-2 border-green-300 shadow-md">
+                    <span className="font-bold text-green-900 text-xs uppercase tracking-wide block mb-2">
+                      📅 Fecha Real
+                    </span>
+                    <p className="text-gray-800 font-semibold">
+                      {selectedEvent.fechaReal}
+                    </p>
+                  </div>
+                )}
+              </div>
+              {selectedEvent.notas && (
+                <div className="bg-linear-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200 w-full">
+                  <span className="font-bold text-blue-900 text-sm uppercase tracking-wide">
+                    Notas
+                  </span>
+                  <p className="text-gray-800 font-semibold text-lg mt-1 w-full wrap-break-word whitespace-normal">
+                    {selectedEvent.notas}
+                  </p>
                 </div>
               )}
             </div>
