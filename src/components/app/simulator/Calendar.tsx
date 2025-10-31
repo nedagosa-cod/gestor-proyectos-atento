@@ -158,6 +158,30 @@ export default function Calendar({
     }
   };
 
+  // Función para formatear fechas del formato Date(año, mes, día) a día/mes/año
+  const formatDateString = (dateString: string | null): string => {
+    if (!dateString) return "";
+
+    // Si la fecha viene en formato "Date(año, mes, día)"
+    if (dateString.includes("Date(")) {
+      const match = dateString.match(/Date\((\d+),(\d+),(\d+)\)/);
+      if (match) {
+        const year = match[1];
+        const month = parseInt(match[2]) + 1; // Los meses en JavaScript empiezan en 0
+        const day = match[3];
+        return `${day}/${month}/${year}`;
+      }
+    }
+
+    // Si ya viene en otro formato, intentar parsearlo
+    try {
+      const date = parseISO(dateString);
+      return format(date, "d/M/yyyy");
+    } catch {
+      return dateString; // Si no se puede parsear, devolver tal cual
+    }
+  };
+
   const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
 
@@ -377,7 +401,7 @@ export default function Calendar({
                       📅 Fecha Inicio
                     </span>
                     <p className="text-gray-800 font-semibold">
-                      {selectedEvent.fechaInicio}
+                      {formatDateString(selectedEvent.fechaInicio)}
                     </p>
                   </div>
                 )}
@@ -387,7 +411,7 @@ export default function Calendar({
                       📅 Fecha Fin
                     </span>
                     <p className="text-gray-800 font-semibold">
-                      {selectedEvent.fechaFin}
+                      {formatDateString(selectedEvent.fechaFin)}
                     </p>
                   </div>
                 )}
@@ -397,7 +421,7 @@ export default function Calendar({
                       📅 Fecha Real
                     </span>
                     <p className="text-gray-800 font-semibold">
-                      {selectedEvent.fechaReal}
+                      {formatDateString(selectedEvent.fechaReal)}
                     </p>
                   </div>
                 )}
