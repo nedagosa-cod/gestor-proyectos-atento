@@ -14,11 +14,12 @@ import {
   endOfWeek,
 } from "date-fns";
 import { es } from "date-fns/locale";
-import type { TrainingRecord } from "./utils/utils";
+import type { TrainingRecord, FestivoRecord } from "./utils/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface CalendarProps {
   data: TrainingRecord[];
+  festivos: FestivoRecord[];
   currentMonth: Date;
   setCurrentMonth: (date: Date) => void;
   selectedDay: Date | null;
@@ -27,6 +28,7 @@ interface CalendarProps {
 
 export default function Calendar({
   data,
+  festivos,
   currentMonth,
   setCurrentMonth,
   selectedDay,
@@ -103,6 +105,49 @@ export default function Calendar({
     });
   };
 
+  // Función para verificar si un día es festivo
+  const isHoliday = (
+    date: Date
+  ): { isHoliday: boolean; name: string | null } => {
+    for (const festivo of festivos) {
+      if (!festivo.festivo) continue;
+
+      try {
+        let festivoDate: Date;
+
+        // Si la fecha viene en formato "Date(año, mes, día)"
+        if (festivo.festivo.includes("Date(")) {
+          const match = festivo.festivo.match(/Date\((\d+),(\d+),(\d+)\)/);
+          if (match) {
+            festivoDate = new Date(
+              parseInt(match[1]),
+              parseInt(match[2]),
+              parseInt(match[3])
+            );
+          } else {
+            continue;
+          }
+        } else {
+          // Intentar parsear como fecha normal
+          festivoDate = parseISO(festivo.festivo);
+        }
+
+        // Comparar solo año, mes y día
+        if (
+          festivoDate.getFullYear() === date.getFullYear() &&
+          festivoDate.getMonth() === date.getMonth() &&
+          festivoDate.getDate() === date.getDate()
+        ) {
+          return { isHoliday: true, name: festivo.festividad };
+        }
+      } catch (error) {
+        console.error("Error parseando fecha de festivo:", error, festivo);
+      }
+    }
+
+    return { isHoliday: false, name: null };
+  };
+
   // Paleta de colores para desarrolladores
   const developerColors = [
     "bg-blue-500",
@@ -143,7 +188,6 @@ export default function Calendar({
   // Obtener color según el estado (solo para el modal de detalle)
   const getStatusColor = (estado: string | null): string => {
     if (!estado) return "bg-gray-500";
-    console.log(estado.toLowerCase());
     switch (estado.toLowerCase()) {
       case "finalizada":
         return "bg-green-500";
@@ -182,6 +226,15 @@ export default function Calendar({
     }
   };
 
+  // Obtener lista única de desarrolladores
+  const uniqueDevelopers = Array.from(
+    new Set(
+      data
+        .map((record) => record.desarrollador)
+        .filter((dev): dev is string => !!dev)
+    )
+  ).sort();
+
   const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
 
@@ -192,6 +245,55 @@ export default function Calendar({
         <h2 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent capitalize">
           {format(currentMonth, "MMMM yyyy", { locale: es })}
         </h2>
+
+        {/* Leyenda de colores */}
+        <div className="bg-white rounded-lg shadow-md px-4 py-2 border border-gray-200">
+          <div className="flex items-center gap-6">
+            <span className="text-xs font-bold text-gray-600">Estados:</span>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm"></div>
+                <span className="text-xs text-gray-700">Finalizada</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-blue-500 shadow-sm"></div>
+                <span className="text-xs text-gray-700">En Proceso</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-red-800 shadow-sm"></div>
+                <span className="text-xs text-gray-700">Pendiente</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-gray-500 shadow-sm"></div>
+                <span className="text-xs text-gray-700">Sin Iniciar</span>
+              </div>
+            </div>
+            <div className="h-6 w-px bg-gray-300"></div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-gray-600">
+                Desarrolladores:
+              </span>
+              <div className="flex items-center gap-2 flex-wrap max-h-8 overflow-y-auto">
+                {uniqueDevelopers.map((developer) => (
+                  <div
+                    key={developer}
+                    className="flex items-center gap-1.5 bg-gray-50 px-2 py-0.5 rounded-full"
+                  >
+                    <div
+                      className={`w-2.5 h-2.5 rounded-full ${getDeveloperColor(
+                        developer
+                      )} shadow-sm`}
+                    ></div>
+                    <span className="text-xs text-gray-700 font-medium">
+                      {developer}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="flex gap-3">
           <button
             onClick={prevMonth}
@@ -236,7 +338,7 @@ export default function Calendar({
             const eventsForDay = getEventsForDate(day);
             const isCurrentMonth = isSameMonth(day, currentMonth);
             const isCurrentDay = isToday(day);
-            console.log(eventsForDay);
+            const holidayInfo = isHoliday(day);
             return (
               <div
                 key={day.toString()}
@@ -245,7 +347,9 @@ export default function Calendar({
                   border-2 rounded-xl p-3 min-h-[100px] flex flex-col cursor-pointer
                   transition-all hover:shadow-xl transform hover:scale-105
                   ${
-                    isCurrentMonth
+                    holidayInfo.isHoliday
+                      ? "bg-red-100 border-red-400"
+                      : isCurrentMonth
                       ? "bg-white border-gray-200"
                       : "bg-gray-100 border-gray-300"
                   }
@@ -258,6 +362,11 @@ export default function Calendar({
                       : ""
                   }
                 `}
+                title={
+                  holidayInfo.isHoliday && holidayInfo.name
+                    ? holidayInfo.name
+                    : undefined
+                }
               >
                 <div
                   className={`
@@ -266,6 +375,8 @@ export default function Calendar({
                     ${
                       isCurrentDay
                         ? "bg-linear-to-r from-blue-500 to-indigo-600 text-white"
+                        : holidayInfo.isHoliday
+                        ? "bg-red-600 text-white"
                         : ""
                     }
                   `}
@@ -275,7 +386,7 @@ export default function Calendar({
 
                 {/* Eventos del día */}
                 <div className="flex-1">
-                  <div className="grid grid-cols-3 gap-1 px-2">
+                  <div className="grid grid-cols-1 xl:grid-cols-3 gap-1 px-2">
                     {eventsForDay.slice(0, 6).map((event, idx) => (
                       <button
                         key={idx}

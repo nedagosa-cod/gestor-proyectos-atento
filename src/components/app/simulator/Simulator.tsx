@@ -1,6 +1,6 @@
-import { useEffect, useState, useCallback, useRef } from "react";
-import { fetchGoogleSheetData } from "./utils/utils";
-import type { TrainingRecord } from "./utils/utils";
+import { useEffect, useState } from "react";
+import { fetchGoogleSheetData, fetchSheetFestivosData } from "./utils/utils";
+import type { TrainingRecord, FestivoRecord } from "./utils/utils";
 import Calendar from "./Calendar";
 import {
   format,
@@ -14,13 +14,12 @@ import {
   endOfWeek,
 } from "date-fns";
 import { es } from "date-fns/locale";
-import { toast } from "sonner";
-import { RefreshCw } from "lucide-react";
 
 type Tab = "calendar" | "campaigns";
 
 export default function Simulator() {
   const [data, setData] = useState<TrainingRecord[]>([]);
+  const [festivos, setFestivos] = useState<FestivoRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
@@ -28,102 +27,28 @@ export default function Simulator() {
   const [activeTab, setActiveTab] = useState<Tab>("calendar");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const intervalRef = useRef<number | null>(null);
 
-  // Intervalo de actualización automática en milisegundos (2 minutos)
-  const REFRESH_INTERVAL = useRef(2 * 60 * 1000).current;
-
-  const loadData = useCallback(
-    async (isManualRefresh = false) => {
+  useEffect(() => {
+    const loadData = async () => {
       try {
-        if (isManualRefresh) {
-          setIsRefreshing(true);
-          toast.info("Actualizando datos...");
-        } else {
-          setLoading(true);
-        }
-
-        const records = await fetchGoogleSheetData();
-
-        // Verificar si hay cambios en los datos
-        const hasChanges = JSON.stringify(data) !== JSON.stringify(records);
-
+        setLoading(true);
+        const [records, festivosData] = await Promise.all([
+          fetchGoogleSheetData(),
+          fetchSheetFestivosData(),
+        ]);
         setData(records);
+        setFestivos(festivosData);
         setError(null);
-        setLastUpdate(new Date());
-
-        if (isManualRefresh) {
-          if (hasChanges && data.length > 0) {
-            toast.success("¡Datos actualizados correctamente!", {
-              description: `Se encontraron cambios en ${records.length} registros`,
-            });
-          } else if (data.length > 0) {
-            toast.info("Los datos ya están actualizados", {
-              description: "No se encontraron cambios nuevos",
-            });
-          } else {
-            toast.success("Datos cargados correctamente");
-          }
-        } else if (hasChanges && data.length > 0) {
-          // Solo notificar en actualización automática si hay cambios
-          toast.success("Se detectaron cambios nuevos", {
-            description: `Datos actualizados automáticamente`,
-          });
-        }
       } catch (err) {
         setError("Error al cargar los datos de Google Sheets");
         console.error(err);
-        if (isManualRefresh) {
-          toast.error("Error al actualizar datos", {
-            description: "No se pudo conectar con Google Sheets",
-          });
-        }
       } finally {
         setLoading(false);
-        setIsRefreshing(false);
-      }
-    },
-    [data]
-  );
-
-  // Carga inicial
-  useEffect(() => {
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Sistema de actualización automática
-  useEffect(() => {
-    if (!autoRefresh) {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      return;
-    }
-
-    // Configurar intervalo de actualización
-    intervalRef.current = setInterval(() => {
-      loadData();
-    }, REFRESH_INTERVAL);
-
-    // Limpiar intervalo al desmontar
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoRefresh]);
 
-  // Función para refrescar manualmente
-  const handleManualRefresh = () => {
-    loadData(true);
-  };
+    loadData();
+  }, []);
 
   // Función para obtener eventos activos en una fecha específica
   const getEventsForDate = (date: Date): TrainingRecord[] => {
@@ -322,58 +247,12 @@ export default function Simulator() {
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-indigo-50 p-8 flex flex-col">
       <div className="mb-8 bg-white rounded-xl shadow-md p-6 border border-gray-100">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <h1 className="text-4xl font-bold mb-3 bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              Calendario de Entrenamientos
-            </h1>
-            <p className="text-gray-600 text-lg">
-              Visualiza los procesos organizados por sus fechas de inicio y fin
-            </p>
-          </div>
-
-          {/* Panel de control de actualización */}
-          <div className="flex flex-col items-end gap-3">
-            <button
-              onClick={handleManualRefresh}
-              disabled={isRefreshing}
-              className={`flex items-center gap-2 px-4 py-2 bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
-                isRefreshing ? "animate-pulse" : ""
-              }`}
-              title="Actualizar datos manualmente"
-            >
-              <RefreshCw
-                className={`w-5 h-5 ${isRefreshing ? "animate-spin" : ""}`}
-              />
-              <span className="font-semibold">
-                {isRefreshing ? "Actualizando..." : "Actualizar"}
-              </span>
-            </button>
-
-            {/* Toggle de actualización automática */}
-            <div className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-lg border border-gray-200">
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={autoRefresh}
-                  onChange={(e) => setAutoRefresh(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                />
-                <span className="ml-2 text-sm font-medium text-gray-700">
-                  Auto-actualizar
-                </span>
-              </label>
-            </div>
-
-            {/* Indicador de última actualización */}
-            <div className="text-xs text-gray-500 flex items-center gap-1">
-              <span>Última actualización:</span>
-              <span className="font-semibold">
-                {format(lastUpdate, "HH:mm:ss", { locale: es })}
-              </span>
-            </div>
-          </div>
-        </div>
+        <h1 className="text-4xl font-bold mb-3 bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          Calendario de Entrenamientos
+        </h1>
+        <p className="text-gray-600 text-lg">
+          Visualiza los procesos organizados por sus fechas de inicio y fin
+        </p>
       </div>
 
       {/* Sistema de pestañas */}
@@ -425,6 +304,7 @@ export default function Simulator() {
               <div className="flex-1 bg-white rounded-xl shadow-xl p-8 overflow-hidden h-dvh border border-gray-100">
                 <Calendar
                   data={data}
+                  festivos={festivos}
                   currentMonth={currentMonth}
                   setCurrentMonth={setCurrentMonth}
                   selectedDay={selectedDay}
