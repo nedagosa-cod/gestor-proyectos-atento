@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
-import { fetchGoogleSheetData, fetchSheetFestivosData } from "./utils/utils";
-import type { TrainingRecord, FestivoRecord } from "./utils/utils";
+import {
+  fetchGoogleSheetData,
+  fetchSheetFestivosData,
+  fetchSheetNovedades,
+} from "./utils/utils";
+import type {
+  TrainingRecord,
+  FestivoRecord,
+  NovedadesRecord,
+} from "./utils/utils";
 import Calendar from "./Calendar";
 import {
   format,
@@ -20,6 +28,7 @@ type Tab = "calendar" | "campaigns";
 export default function Simulator() {
   const [data, setData] = useState<TrainingRecord[]>([]);
   const [festivos, setFestivos] = useState<FestivoRecord[]>([]);
+  const [novedades, setNovedades] = useState<NovedadesRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
@@ -32,12 +41,14 @@ export default function Simulator() {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [records, festivosData] = await Promise.all([
+        const [records, festivosData, novedadesData] = await Promise.all([
           fetchGoogleSheetData(),
           fetchSheetFestivosData(),
+          fetchSheetNovedades(),
         ]);
         setData(records);
         setFestivos(festivosData);
+        setNovedades(novedadesData);
         setError(null);
       } catch (err) {
         setError("Error al cargar los datos de Google Sheets");
@@ -309,6 +320,7 @@ export default function Simulator() {
                   setCurrentMonth={setCurrentMonth}
                   selectedDay={selectedDay}
                   setSelectedDay={setSelectedDay}
+                  novedades={novedades}
                 />
               </div>
 

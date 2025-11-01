@@ -38,6 +38,13 @@ export interface FestivoRecord {
   festividad: string | null;
 }
 
+export interface NovedadesRecord {
+  desarrollador: string | null;
+  fechaInicio: string | null;
+  fechaFin: string | null;
+  novedad: string | null;
+}
+
 export const fetchGoogleSheetData = async (): Promise<TrainingRecord[]> => {
   try {
     // ID de tu Google Sheet
@@ -119,6 +126,49 @@ export const fetchSheetFestivosData = async (): Promise<FestivoRecord[]> => {
           return {
             festivo: row.c[3] ? String(row.c[3].v) : null,
             festividad: row.c[4] ? String(row.c[4].v) : null,
+          };
+        });
+
+      console.log("📊 Datos de Google Sheets:");
+      console.log("Total de filas:", formattedData.length);
+      console.table(formattedData);
+
+      return formattedData;
+    }
+
+    return [];
+  } catch (error) {
+    console.error("Error al cargar datos de Google Sheets:", error);
+    return [];
+  }
+};
+
+export const fetchSheetNovedades = async (): Promise<NovedadesRecord[]> => {
+  try {
+    const sheetId = "1iU_X2DpMN2wmPE0-V69NvATwQX7PE_q15IYMcj5EYXY";
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=Novedades`;
+    const response = await fetch(url);
+    const text = await response.text();
+    // Google retorna JSONP, necesitamos extraer el JSON
+    const jsonString = text.match(
+      /google\.visualization\.Query\.setResponse\(([\s\S\w]+)\);/
+    );
+
+    if (jsonString && jsonString[1]) {
+      const data: SheetData = JSON.parse(jsonString[1]);
+      console.log(jsonString[1]);
+      // Extraer las filas y columnas
+      const rows = data.table.rows;
+
+      // Convertir a formato TrainingRecord
+      const formattedData: NovedadesRecord[] = rows
+        .slice(0)
+        .map((row: SheetRow) => {
+          return {
+            desarrollador: row.c[0] ? String(row.c[0].v) : null,
+            fechaInicio: row.c[1] ? String(row.c[1].v) : null,
+            fechaFin: row.c[2] ? String(row.c[2].v) : null,
+            novedad: row.c[3] ? String(row.c[3].v) : null,
           };
         });
 

@@ -14,12 +14,17 @@ import {
   endOfWeek,
 } from "date-fns";
 import { es } from "date-fns/locale";
-import type { TrainingRecord, FestivoRecord } from "./utils/utils";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import type {
+  TrainingRecord,
+  FestivoRecord,
+  NovedadesRecord,
+} from "./utils/utils";
+import { ChevronLeft, ChevronRight, Play, Flag } from "lucide-react";
 
 interface CalendarProps {
   data: TrainingRecord[];
   festivos: FestivoRecord[];
+  novedades: NovedadesRecord[];
   currentMonth: Date;
   setCurrentMonth: (date: Date) => void;
   selectedDay: Date | null;
@@ -33,10 +38,12 @@ export default function Calendar({
   setCurrentMonth,
   selectedDay,
   setSelectedDay,
+  novedades,
 }: CalendarProps) {
   const [selectedEvent, setSelectedEvent] = useState<TrainingRecord | null>(
     null
   );
+  const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
 
   // Obtener todos los días del mes actual incluyendo días de semanas anteriores/posteriores
   const monthStart = startOfMonth(currentMonth);
@@ -148,6 +155,57 @@ export default function Calendar({
     return { isHoliday: false, name: null };
   };
 
+  // Función para obtener novedades activas en una fecha específica
+  const getNovedadesForDate = (date: Date): NovedadesRecord[] => {
+    return novedades.filter((novedad) => {
+      if (!novedad.fechaInicio || !novedad.fechaFin) return false;
+
+      try {
+        let startDate: Date;
+        let endDate: Date;
+
+        // Si la fecha viene en formato "Date(año, mes, día)"
+        if (novedad.fechaInicio.includes("Date(")) {
+          const startMatch = novedad.fechaInicio.match(
+            /Date\((\d+),(\d+),(\d+)\)/
+          );
+          if (startMatch) {
+            startDate = new Date(
+              parseInt(startMatch[1]),
+              parseInt(startMatch[2]),
+              parseInt(startMatch[3])
+            );
+          } else {
+            return false;
+          }
+        } else {
+          startDate = parseISO(novedad.fechaInicio);
+        }
+
+        if (novedad.fechaFin.includes("Date(")) {
+          const endMatch = novedad.fechaFin.match(/Date\((\d+),(\d+),(\d+)\)/);
+          if (endMatch) {
+            endDate = new Date(
+              parseInt(endMatch[1]),
+              parseInt(endMatch[2]),
+              parseInt(endMatch[3])
+            );
+          } else {
+            return false;
+          }
+        } else {
+          endDate = parseISO(novedad.fechaFin);
+        }
+
+        // Verificar si la fecha está dentro del rango
+        return isWithinInterval(date, { start: startDate, end: endDate });
+      } catch (error) {
+        console.error("Error parseando fecha de novedad:", error, novedad);
+        return false;
+      }
+    });
+  };
+
   // Paleta de colores para desarrolladores
   const developerColors = [
     "bg-blue-500",
@@ -202,6 +260,68 @@ export default function Calendar({
     }
   };
 
+  // Función para verificar si una fecha es inicio o fin de un evento
+  const isDateStartOrEnd = (
+    date: Date,
+    event: TrainingRecord
+  ): { isStart: boolean; isEnd: boolean } => {
+    if (!event.fechaInicio || !event.fechaFin)
+      return { isStart: false, isEnd: false };
+
+    try {
+      let startDate: Date;
+      let endDate: Date;
+
+      // Parsear fecha de inicio
+      if (event.fechaInicio.includes("Date(")) {
+        const startMatch = event.fechaInicio.match(/Date\((\d+),(\d+),(\d+)\)/);
+        if (startMatch) {
+          startDate = new Date(
+            parseInt(startMatch[1]),
+            parseInt(startMatch[2]),
+            parseInt(startMatch[3])
+          );
+        } else {
+          return { isStart: false, isEnd: false };
+        }
+      } else {
+        startDate = parseISO(event.fechaInicio);
+      }
+
+      // Parsear fecha de fin
+      if (event.fechaFin.includes("Date(")) {
+        const endMatch = event.fechaFin.match(/Date\((\d+),(\d+),(\d+)\)/);
+        if (endMatch) {
+          endDate = new Date(
+            parseInt(endMatch[1]),
+            parseInt(endMatch[2]),
+            parseInt(endMatch[3])
+          );
+        } else {
+          return { isStart: false, isEnd: false };
+        }
+      } else {
+        endDate = parseISO(event.fechaFin);
+      }
+
+      // Comparar solo año, mes y día
+      const isStart =
+        startDate.getFullYear() === date.getFullYear() &&
+        startDate.getMonth() === date.getMonth() &&
+        startDate.getDate() === date.getDate();
+
+      const isEnd =
+        endDate.getFullYear() === date.getFullYear() &&
+        endDate.getMonth() === date.getMonth() &&
+        endDate.getDate() === date.getDate();
+
+      return { isStart, isEnd };
+    } catch (error) {
+      console.error("Error parseando fechas:", error, event);
+      return { isStart: false, isEnd: false };
+    }
+  };
+
   // Función para formatear fechas del formato Date(año, mes, día) a día/mes/año
   const formatDateString = (dateString: string | null): string => {
     if (!dateString) return "";
@@ -235,86 +355,199 @@ export default function Calendar({
     )
   ).sort();
 
+  // Obtener campañas activas del mes actual
+  const getActiveCampaigns = (): string[] => {
+    const campaignsInMonth = data.filter((record) => {
+      if (!record.fechaInicio || !record.fechaFin || !record.campana)
+        return false;
+
+      try {
+        let startDate: Date;
+        let endDate: Date;
+
+        // Parsear fecha de inicio
+        if (record.fechaInicio.includes("Date(")) {
+          const startMatch = record.fechaInicio.match(
+            /Date\((\d+),(\d+),(\d+)\)/
+          );
+          if (startMatch) {
+            startDate = new Date(
+              parseInt(startMatch[1]),
+              parseInt(startMatch[2]),
+              parseInt(startMatch[3])
+            );
+          } else {
+            return false;
+          }
+        } else {
+          startDate = parseISO(record.fechaInicio);
+        }
+
+        // Parsear fecha de fin
+        if (record.fechaFin.includes("Date(")) {
+          const endMatch = record.fechaFin.match(/Date\((\d+),(\d+),(\d+)\)/);
+          if (endMatch) {
+            endDate = new Date(
+              parseInt(endMatch[1]),
+              parseInt(endMatch[2]),
+              parseInt(endMatch[3])
+            );
+          } else {
+            return false;
+          }
+        } else {
+          endDate = parseISO(record.fechaFin);
+        }
+
+        // Verificar si hay algún día del mes dentro del rango
+        const monthStartDate = startOfMonth(currentMonth);
+        const monthEndDate = endOfMonth(currentMonth);
+
+        return startDate <= monthEndDate && endDate >= monthStartDate;
+      } catch (error) {
+        console.error("Error parseando fechas:", error, record);
+        return false;
+      }
+    });
+
+    // Obtener campañas únicas
+    const uniqueCampaigns = Array.from(
+      new Set(
+        campaignsInMonth
+          .map((record) => record.campana)
+          .filter((c): c is string => !!c)
+      )
+    ).sort();
+
+    return uniqueCampaigns;
+  };
+
+  const activeCampaigns = getActiveCampaigns();
+
   const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
 
   return (
     <div className="w-full h-full flex flex-col">
       {/* Header del calendario */}
-      <div className="flex items-center justify-between mb-8 px-4">
-        <h2 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent capitalize">
-          {format(currentMonth, "MMMM yyyy", { locale: es })}
-        </h2>
+      <div className="flex flex-col gap-4 mb-8 px-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent capitalize">
+            {format(currentMonth, "MMMM yyyy", { locale: es })}
+          </h2>
 
-        {/* Leyenda de colores */}
-        <div className="bg-white rounded-lg shadow-md px-4 py-2 border border-gray-200">
-          <div className="flex items-center gap-6">
-            <span className="text-xs font-bold text-gray-600">Estados:</span>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm"></div>
-                <span className="text-xs text-gray-700">Finalizada</span>
+          {/* Leyenda de colores */}
+          <div className="bg-white rounded-lg shadow-md px-4 py-2 border border-gray-200">
+            <div className="flex items-center gap-6">
+              <span className="text-xs font-bold text-gray-600">Estados:</span>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm"></div>
+                  <span className="text-xs text-gray-700">Finalizada</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-blue-500 shadow-sm"></div>
+                  <span className="text-xs text-gray-700">En Proceso</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-red-800 shadow-sm"></div>
+                  <span className="text-xs text-gray-700">Pendiente</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-gray-500 shadow-sm"></div>
+                  <span className="text-xs text-gray-700">Sin Iniciar</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-blue-500 shadow-sm"></div>
-                <span className="text-xs text-gray-700">En Proceso</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-800 shadow-sm"></div>
-                <span className="text-xs text-gray-700">Pendiente</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-gray-500 shadow-sm"></div>
-                <span className="text-xs text-gray-700">Sin Iniciar</span>
-              </div>
-            </div>
-            <div className="h-6 w-px bg-gray-300"></div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-gray-600">
-                Desarrolladores:
-              </span>
-              <div className="flex items-center gap-2 flex-wrap max-h-8 overflow-y-auto">
-                {uniqueDevelopers.map((developer) => (
-                  <div
-                    key={developer}
-                    className="flex items-center gap-1.5 bg-gray-50 px-2 py-0.5 rounded-full"
-                  >
+              <div className="h-6 w-px bg-gray-300"></div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-gray-600">
+                  Desarrolladores:
+                </span>
+                <div className="flex items-center gap-2 flex-wrap max-h-8 overflow-y-auto">
+                  {uniqueDevelopers.map((developer) => (
                     <div
-                      className={`w-2.5 h-2.5 rounded-full ${getDeveloperColor(
-                        developer
-                      )} shadow-sm`}
-                    ></div>
-                    <span className="text-xs text-gray-700 font-medium">
-                      {developer}
-                    </span>
-                  </div>
-                ))}
+                      key={developer}
+                      className="flex items-center gap-1.5 bg-gray-50 px-2 py-0.5 rounded-full"
+                    >
+                      <div
+                        className={`w-2.5 h-2.5 rounded-full ${getDeveloperColor(
+                          developer
+                        )} shadow-sm`}
+                      ></div>
+                      <span className="text-xs text-gray-700 font-medium">
+                        {developer}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="h-6 w-px bg-gray-300"></div>
+
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <Play className="w-4 h-4 text-gray-700" />
+                  <span className="text-xs text-gray-700">Inicio</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Flag className="w-4 h-4 text-gray-700" />
+                  <span className="text-xs text-gray-700">Fin</span>
+                </div>
               </div>
             </div>
+            {/* Campañas activas del mes */}
+            {activeCampaigns.length > 0 && (
+              <div className="bg-blue-500 rounded-lg shadow-md px-4 py-3 border border-gray-200 mt-2 flex items-center justify-center">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {activeCampaigns.map((campaign) => (
+                    <button
+                      key={campaign}
+                      onClick={() =>
+                        setSelectedCampaign(
+                          selectedCampaign === campaign ? null : campaign
+                        )
+                      }
+                      className={`px-3 rounded shadow-sm hover:shadow-md transition-all transform hover:scale-105 cursor-pointer ${
+                        selectedCampaign === campaign
+                          ? "bg-linear-to-r from-purple-600 to-pink-600 text-white ring-2 ring-purple-400"
+                          : "ring-1 ring-gray-300 bg-white"
+                      }`}
+                      title={
+                        selectedCampaign === campaign
+                          ? "Clic para quitar filtro"
+                          : "Clic para filtrar por esta campaña"
+                      }
+                    >
+                      <span className="text-xs font-medium">{campaign}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
 
-        <div className="flex gap-3">
-          <button
-            onClick={prevMonth}
-            className="p-3 bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-lg transition-all hover:shadow-lg transform hover:scale-105"
-            aria-label="Mes anterior"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => setCurrentMonth(new Date())}
-            className="px-6 py-3 bg-linear-to-r from-purple-500 to-pink-600 text-white rounded-lg transition-all hover:shadow-lg transform hover:scale-105 font-bold"
-          >
-            Hoy
-          </button>
-          <button
-            onClick={nextMonth}
-            className="p-3 bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-lg transition-all hover:shadow-lg transform hover:scale-105"
-            aria-label="Mes siguiente"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
+          {/* Cambia mes */}
+          <div className="flex gap-3">
+            <button
+              onClick={prevMonth}
+              className="p-3 bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-lg transition-all hover:shadow-lg transform hover:scale-105"
+              aria-label="Mes anterior"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setCurrentMonth(new Date())}
+              className="px-6 py-3 bg-linear-to-r from-purple-500 to-pink-600 text-white rounded-lg transition-all hover:shadow-lg transform hover:scale-105 font-bold"
+            >
+              Hoy
+            </button>
+            <button
+              onClick={nextMonth}
+              className="p-3 bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-lg transition-all hover:shadow-lg transform hover:scale-105"
+              aria-label="Mes siguiente"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -336,6 +569,7 @@ export default function Calendar({
         <div className="grid grid-cols-6 gap-3 flex-1">
           {days.map((day) => {
             const eventsForDay = getEventsForDate(day);
+            const novedadesForDay = getNovedadesForDate(day);
             const isCurrentMonth = isSameMonth(day, currentMonth);
             const isCurrentDay = isToday(day);
             const holidayInfo = isHoliday(day);
@@ -362,14 +596,10 @@ export default function Calendar({
                       : ""
                   }
                 `}
-                title={
-                  holidayInfo.isHoliday && holidayInfo.name
-                    ? holidayInfo.name
-                    : undefined
-                }
               >
-                <div
-                  className={`
+                <div className="flex-1 flex">
+                  <div
+                    className={`
                     text-sm font-bold mb-2 flex items-center justify-center w-7 h-7 rounded-full
                     ${isCurrentMonth ? "text-gray-900" : "text-gray-500"}
                     ${
@@ -380,42 +610,97 @@ export default function Calendar({
                         : ""
                     }
                   `}
-                >
-                  {format(day, "d")}
+                  >
+                    {format(day, "d")}
+                  </div>
+                  <div className="flex items-center gap-3 ml-1">
+                    {novedadesForDay.map((novedad, idx) => (
+                      <div
+                        key={idx}
+                        className={`w-2 h-2 transform rotate-45 shadow-sm mb-2 ring-2 ring-red-800 ${getDeveloperColor(
+                          novedad.desarrollador
+                        )}`}
+                        title={`${
+                          novedad.desarrollador || "Sin desarrollador"
+                        }: ${novedad.novedad || "Sin descripción"}`}
+                      ></div>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Eventos del día */}
                 <div className="flex-1">
-                  <div className="grid grid-cols-1 xl:grid-cols-3 gap-1 px-2">
-                    {eventsForDay.slice(0, 6).map((event, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setSelectedEvent(event)}
-                        className={`
-                          text-left text-[10px] px-2 py-1.5 rounded-lg flex justify-between items-center
-                          ${getDeveloperColor(event.desarrollador)} text-white
-                          hover:opacity-90 transition-all shadow-md hover:shadow-lg transform hover:scale-105 
-                          truncate
-                        `}
-                        title={`${event.campana || "Sin campaña"} - ${
-                          event.nombreProceso || "Sin proceso"
-                        }`}
-                      >
-                        <p className="w-4/5 overflow-hidden text-ellipsis whitespace-nowrap font-semibold">
-                          {event.campana || "Sin dev"}
+                  {holidayInfo.isHoliday ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <p className="text-xs font-bold text-red-700">
+                          🎉 Festivo
                         </p>
-                        <div
-                          className={`rounded-full ring-2 ring-white ${getStatusColor(
-                            event.estado
-                          )} w-2 h-2 shadow-sm`}
-                        ></div>
-                      </button>
-                    ))}
-                  </div>
-                  {eventsForDay.length > 6 && (
-                    <div className="text-xs font-bold text-gray-700 text-center mt-2 bg-gray-100 rounded py-1">
-                      +{eventsForDay.length - 6} más
+                        {holidayInfo.name && (
+                          <p className="text-[10px] text-red-600 mt-1">
+                            {holidayInfo.name}
+                          </p>
+                        )}
+                      </div>
                     </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-1 px-2">
+                        {eventsForDay.slice(0, 6).map((event, idx) => {
+                          const dateStatus = isDateStartOrEnd(day, event);
+                          const isFiltered =
+                            selectedCampaign &&
+                            event.campana !== selectedCampaign;
+                          const shouldSpanTwoColumns =
+                            eventsForDay.length === 3 && idx === 2;
+                          return (
+                            <button
+                              key={idx}
+                              onClick={() => setSelectedEvent(event)}
+                              className={`
+                              text-left text-[10px] px-2 py-1.5 rounded-lg flex justify-between items-center gap-1
+                              ${getDeveloperColor(
+                                event.desarrollador
+                              )} text-white
+                              hover:opacity-90 transition-all shadow-md hover:shadow-lg transform hover:scale-105 
+                              truncate
+                              ${
+                                isFiltered
+                                  ? "opacity-30 grayscale saturate-0"
+                                  : ""
+                              }
+                              ${shouldSpanTwoColumns ? "xl:col-span-2" : ""}
+                            `}
+                              title={`${event.campana || "Sin campaña"} - ${
+                                event.nombreProceso || "Sin proceso"
+                              }`}
+                            >
+                              <p className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-semibold">
+                                {event.campana || "Sin dev"}
+                              </p>
+                              <div className="flex items-center gap-1">
+                                {dateStatus.isStart && (
+                                  <Play className="w-3 h-3 text-white" />
+                                )}
+                                {dateStatus.isEnd && (
+                                  <Flag className="w-3 h-3 text-white" />
+                                )}
+                                <div
+                                  className={`rounded-full ring-2 ring-white ${getStatusColor(
+                                    event.estado
+                                  )} w-2 h-2 shadow-sm`}
+                                ></div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {eventsForDay.length > 6 && (
+                        <div className="text-xs font-bold text-gray-700 text-center mt-2 bg-gray-100 rounded py-1">
+                          +{eventsForDay.length - 6} más
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
