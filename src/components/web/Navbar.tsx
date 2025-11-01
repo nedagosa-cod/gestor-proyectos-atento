@@ -15,12 +15,12 @@ export default function Navbar() {
           </Link>
         </li>
         <li>
-          <Link to="/simulator" className="text-white hover:text-gray-300">
+          <Link to="/web-training" className="text-white hover:text-gray-300">
             Web Training
           </Link>
         </li>
         <li>
-          <Link to="/simulator" className="text-white hover:text-gray-300">
+          <Link to="/metaverso" className="text-white hover:text-gray-300">
             Metaverso
           </Link>
         </li>
