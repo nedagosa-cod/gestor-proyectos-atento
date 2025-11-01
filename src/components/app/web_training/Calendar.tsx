@@ -925,35 +925,11 @@ export default function Calendar({
                           )
                           .slice(0, 6)
                           .map((event, idx) => {
-                            const dateStatus = isDateStartOrEnd(day, event);
                             const isFiltered =
                               selectedCampaign &&
                               event.campana !== selectedCampaign;
                             // Obtener el estado más relevante (priorizar en proceso y finalizado)
-                            const getGroupStatus = () => {
-                              const estados = event.desarrollos.map(
-                                (d) => d.estado
-                              );
-                              if (
-                                estados.some(
-                                  (e) => e?.toLowerCase() === "en proceso"
-                                )
-                              )
-                                return "En Proceso";
-                              if (
-                                estados.some(
-                                  (e) => e?.toLowerCase() === "finalizado"
-                                )
-                              )
-                                return "Finalizado";
-                              if (
-                                estados.some(
-                                  (e) => e?.toLowerCase() === "entregado"
-                                )
-                              )
-                                return "Entregado";
-                              return estados[0] || null;
-                            };
+
                             return (
                               <button
                                 key={idx}
