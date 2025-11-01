@@ -31,6 +31,24 @@ interface CalendarProps {
   setSelectedDay: (date: Date | null) => void;
 }
 
+// Interfaz para agrupar eventos por campaña
+interface GroupedEvent {
+  campana: string;
+  coordinador: string | null;
+  desarrollador: string | null;
+  fechaMaterial: string | null;
+  fechaInicio: string | null;
+  fechaFin: string | null;
+  desarrollos: Array<{
+    desarrollo: string | null;
+    nombre: string | null;
+    segmento: string | null;
+    cantidad: string | null;
+    estado: string | null;
+    observaciones: string | null;
+  }>;
+}
+
 export default function Calendar({
   data,
   festivos,
@@ -40,9 +58,7 @@ export default function Calendar({
   setSelectedDay,
   novedades,
 }: CalendarProps) {
-  const [selectedEvent, setSelectedEvent] = useState<TrainingRecord | null>(
-    null
-  );
+  const [selectedEvent, setSelectedEvent] = useState<GroupedEvent | null>(null);
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
 
   // Obtener todos los días del mes actual incluyendo días de semanas anteriores/posteriores
@@ -110,6 +126,39 @@ export default function Calendar({
         return false;
       }
     });
+  };
+
+  // Función para agrupar eventos por campaña
+  const groupEventsByCampaign = (events: TrainingRecord[]): GroupedEvent[] => {
+    const grouped = new Map<string, GroupedEvent>();
+
+    events.forEach((event) => {
+      const campana = event.campana || "Sin campaña";
+
+      if (!grouped.has(campana)) {
+        grouped.set(campana, {
+          campana: campana,
+          coordinador: event.coordinador,
+          desarrollador: event.desarrollador,
+          fechaMaterial: event.fechaMaterial,
+          fechaInicio: event.fechaInicio,
+          fechaFin: event.fechaFin,
+          desarrollos: [],
+        });
+      }
+
+      const group = grouped.get(campana)!;
+      group.desarrollos.push({
+        desarrollo: event.desarrollo,
+        nombre: event.nombre,
+        segmento: event.segmento,
+        cantidad: event.cantidad,
+        estado: event.estado,
+        observaciones: event.observaciones,
+      });
+    });
+
+    return Array.from(grouped.values());
   };
 
   // Función para verificar si un día es festivo
@@ -206,8 +255,8 @@ export default function Calendar({
     });
   };
 
-  // Paleta de colores para desarrolladores
-  const developerColors = [
+  // Paleta de colores para campañas (50+ colores distintos)
+  const campaignColors = [
     "bg-blue-500",
     "bg-green-500",
     "bg-pink-500",
@@ -226,11 +275,73 @@ export default function Calendar({
     "bg-rose-500",
     "bg-sky-500",
     "bg-slate-500",
+    "bg-blue-600",
+    "bg-green-600",
+    "bg-pink-600",
+    "bg-indigo-600",
+    "bg-red-600",
+    "bg-purple-600",
+    "bg-yellow-600",
+    "bg-teal-600",
+    "bg-orange-600",
+    "bg-cyan-600",
+    "bg-lime-600",
+    "bg-amber-600",
+    "bg-emerald-600",
+    "bg-violet-600",
+    "bg-fuchsia-600",
+    "bg-rose-600",
+    "bg-sky-600",
+    "bg-blue-700",
+    "bg-green-700",
+    "bg-pink-700",
+    "bg-indigo-700",
+    "bg-red-700",
+    "bg-purple-700",
+    "bg-yellow-700",
+    "bg-teal-700",
+    "bg-orange-700",
+    "bg-cyan-700",
+    "bg-lime-700",
+    "bg-amber-700",
+    "bg-emerald-700",
+    "bg-violet-700",
+    "bg-fuchsia-700",
+    "bg-rose-700",
+    "bg-sky-700",
   ];
 
-  // Función para obtener un color consistente para cada desarrollador
+  // Función para obtener un color consistente para cada campaña
+  const getCampaignColor = (campana: string | null): string => {
+    if (!campana) return "bg-gray-500";
+
+    // Generar un hash simple del nombre de la campaña
+    let hash = 0;
+    for (let i = 0; i < campana.length; i++) {
+      hash = campana.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    // Usar el hash para seleccionar un color de la paleta
+    const index = Math.abs(hash) % campaignColors.length;
+    return campaignColors[index];
+  };
+
+  // Función para obtener un color consistente para cada desarrollador (usada en novedades)
   const getDeveloperColor = (desarrollador: string | null): string => {
     if (!desarrollador) return "bg-gray-500";
+
+    const developerColors = [
+      "bg-blue-500",
+      "bg-green-500",
+      "bg-pink-500",
+      "bg-indigo-500",
+      "bg-red-500",
+      "bg-purple-500",
+      "bg-yellow-500",
+      "bg-teal-500",
+      "bg-orange-500",
+      "bg-cyan-500",
+    ];
 
     // Generar un hash simple del nombre del desarrollador
     let hash = 0;
@@ -267,7 +378,7 @@ export default function Calendar({
   // Función para verificar si una fecha es inicio o fin de un evento
   const isDateStartOrEnd = (
     date: Date,
-    event: TrainingRecord
+    event: GroupedEvent
   ): { isStart: boolean; isEnd: boolean } => {
     if (!event.fechaInicio || !event.fechaFin)
       return { isStart: false, isEnd: false };
@@ -349,15 +460,6 @@ export default function Calendar({
       return dateString; // Si no se puede parsear, devolver tal cual
     }
   };
-
-  // Obtener lista única de desarrolladores
-  const uniqueDevelopers = Array.from(
-    new Set(
-      data
-        .map((record) => record.desarrollador)
-        .filter((dev): dev is string => !!dev)
-    )
-  ).sort();
 
   // Obtener campañas activas del mes actual
   const getActiveCampaigns = (): string[] => {
@@ -463,29 +565,6 @@ export default function Calendar({
                 </div>
               </div>
               <div className="h-6 w-px bg-gray-300"></div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-gray-600">
-                  Desarrolladores:
-                </span>
-                <div className="flex items-center gap-2 flex-wrap max-h-8 overflow-y-auto">
-                  {uniqueDevelopers.map((developer) => (
-                    <div
-                      key={developer}
-                      className="flex items-center gap-1.5 bg-gray-50 px-2 py-0.5 rounded-full"
-                    >
-                      <div
-                        className={`w-2.5 h-2.5 rounded-full ${getDeveloperColor(
-                          developer
-                        )} shadow-sm`}
-                      ></div>
-                      <span className="text-xs text-gray-700 font-medium">
-                        {developer}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="h-6 w-px bg-gray-300"></div>
 
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1">
@@ -510,10 +589,12 @@ export default function Calendar({
                           selectedCampaign === campaign ? null : campaign
                         )
                       }
-                      className={`px-3 rounded shadow-sm hover:shadow-md transition-all transform hover:scale-105 cursor-pointer ${
+                      className={`px-3 py-1 rounded shadow-sm hover:shadow-md transition-all transform hover:scale-105 cursor-pointer ${
                         selectedCampaign === campaign
-                          ? "bg-linear-to-r from-purple-600 to-pink-600 text-white ring-2 ring-purple-400"
-                          : "ring-1 ring-gray-300 bg-white"
+                          ? "bg-white text-gray-800 ring-2 ring-white"
+                          : `${getCampaignColor(
+                              campaign
+                            )} text-white ring-1 ring-white/30`
                       }`}
                       title={
                         selectedCampaign === campaign
@@ -573,6 +654,7 @@ export default function Calendar({
         <div className="grid grid-cols-6 gap-3 flex-1">
           {days.map((day) => {
             const eventsForDay = getEventsForDate(day);
+            const groupedEvents = groupEventsByCampaign(eventsForDay);
             const novedadesForDay = getNovedadesForDate(day);
             const isCurrentMonth = isSameMonth(day, currentMonth);
             const isCurrentDay = isToday(day);
@@ -649,23 +731,55 @@ export default function Calendar({
                     </div>
                   ) : (
                     <>
-                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-1 px-2">
-                        {eventsForDay.slice(0, 6).map((event, idx) => {
-                          const dateStatus = isDateStartOrEnd(day, event);
-                          const isFiltered =
-                            selectedCampaign &&
-                            event.campana !== selectedCampaign;
-                          const shouldSpanTwoColumns =
-                            eventsForDay.length === 3 && idx === 2;
-                          return (
-                            <button
-                              key={idx}
-                              onClick={() => setSelectedEvent(event)}
-                              className={`
+                      <div className="flex gap-1 px-2 ">
+                        {groupedEvents
+                          .filter(
+                            (event) =>
+                              !event.desarrollos.some(
+                                (d) =>
+                                  d.desarrollo?.toUpperCase() ===
+                                  "ACTUALIZACION"
+                              )
+                          )
+                          .slice(0, 6)
+                          .map((event, idx) => {
+                            const dateStatus = isDateStartOrEnd(day, event);
+                            const isFiltered =
+                              selectedCampaign &&
+                              event.campana !== selectedCampaign;
+                            // Obtener el estado más relevante (priorizar en proceso y finalizado)
+                            const getGroupStatus = () => {
+                              const estados = event.desarrollos.map(
+                                (d) => d.estado
+                              );
+                              if (
+                                estados.some(
+                                  (e) => e?.toLowerCase() === "en proceso"
+                                )
+                              )
+                                return "En Proceso";
+                              if (
+                                estados.some(
+                                  (e) => e?.toLowerCase() === "finalizado"
+                                )
+                              )
+                                return "Finalizado";
+                              if (
+                                estados.some(
+                                  (e) => e?.toLowerCase() === "entregado"
+                                )
+                              )
+                                return "Entregado";
+                              return estados[0] || null;
+                            };
+                            return (
+                              <button
+                                key={idx}
+                                onClick={() => setSelectedEvent(event)}
+                                className={`
+                              flex-1 min-w-0
                               text-left text-[10px] px-2 py-1.5 rounded-lg flex justify-between items-center gap-1
-                              ${getDeveloperColor(
-                                event.desarrollador
-                              )} text-white
+                              ${getCampaignColor(event.campana)} text-white
                               hover:opacity-90 transition-all shadow-md hover:shadow-lg transform hover:scale-105 
                               truncate
                               ${
@@ -673,35 +787,203 @@ export default function Calendar({
                                   ? "opacity-30 grayscale saturate-0"
                                   : ""
                               }
-                              ${shouldSpanTwoColumns ? "xl:col-span-2" : ""}
                             `}
-                              title={`${event.campana || "Sin campaña"} - ${
-                                event.nombre || "Sin proceso"
-                              }`}
-                            >
-                              <p className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-semibold">
-                                {event.campana || "Sin campaña"}
-                              </p>
-                              <div className="flex items-center gap-1">
-                                {dateStatus.isStart && (
-                                  <Play className="w-3 h-3 text-white" />
-                                )}
-                                {dateStatus.isEnd && (
-                                  <Flag className="w-3 h-3 text-white" />
-                                )}
-                                <div
-                                  className={`rounded-full ring-2 ring-white ${getStatusColor(
-                                    event.estado
-                                  )} w-2 h-2 shadow-sm`}
-                                ></div>
-                              </div>
-                            </button>
-                          );
-                        })}
+                                title={`${event.campana || "Sin campaña"} (${
+                                  event.desarrollos.length
+                                } desarrollo${
+                                  event.desarrollos.length > 1 ? "s" : ""
+                                })`}
+                              >
+                                <p className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-semibold">
+                                  {event.desarrollador
+                                    ?.split(" ")[0]
+                                    .slice(0, 1)
+                                    .toUpperCase()}
+                                  {event.desarrollador
+                                    ?.split(" ")[1]
+                                    .slice(0, 1)
+                                    .toUpperCase()}
+                                </p>
+                                <div className="flex items-center gap-1">
+                                  {dateStatus.isStart && (
+                                    <Play className="w-3 h-3 text-white" />
+                                  )}
+                                  {dateStatus.isEnd && (
+                                    <Flag className="w-3 h-3 text-white" />
+                                  )}
+                                  <div
+                                    className={`rounded-full ring-2 ring-white ${getStatusColor(
+                                      getGroupStatus()
+                                    )} w-2 h-2 shadow-sm`}
+                                  ></div>
+                                </div>
+                              </button>
+                            );
+                          })}
                       </div>
-                      {eventsForDay.length > 6 && (
+                      <div className="flex gap-1 px-2 mt-1">
+                        {groupedEvents
+                          .filter(
+                            (event) =>
+                              event.desarrollos.some(
+                                (d) =>
+                                  d.desarrollo?.toUpperCase() ===
+                                  "ACTUALIZACION"
+                              ) &&
+                              !event.desarrollos.some(
+                                (d) =>
+                                  d.estado?.toLowerCase() === "incumplimiento"
+                              )
+                          )
+                          .slice(0, 6)
+                          .map((event, idx) => {
+                            const dateStatus = isDateStartOrEnd(day, event);
+                            const isFiltered =
+                              selectedCampaign &&
+                              event.campana !== selectedCampaign;
+                            // Obtener el estado más relevante (priorizar en proceso y finalizado)
+                            const getGroupStatus = () => {
+                              const estados = event.desarrollos.map(
+                                (d) => d.estado
+                              );
+                              if (
+                                estados.some(
+                                  (e) => e?.toLowerCase() === "en proceso"
+                                )
+                              )
+                                return "En Proceso";
+                              if (
+                                estados.some(
+                                  (e) => e?.toLowerCase() === "finalizado"
+                                )
+                              )
+                                return "Finalizado";
+                              if (
+                                estados.some(
+                                  (e) => e?.toLowerCase() === "entregado"
+                                )
+                              )
+                                return "Entregado";
+                              return estados[0] || null;
+                            };
+                            return (
+                              <button
+                                key={idx}
+                                onClick={() => setSelectedEvent(event)}
+                                className={`
+                              flex-1 min-w-0
+                              text-left text-[8px] px-2 py-0.2 rounded-lg flex justify-between items-center gap-1
+                              ${getCampaignColor(event.campana)} text-white
+                              hover:opacity-90 transition-all shadow-md hover:shadow-lg transform hover:scale-105 
+                              truncate
+                              ${
+                                isFiltered
+                                  ? "opacity-30 grayscale saturate-0"
+                                  : ""
+                              }
+                            `}
+                                title={`${event.campana || "Sin campaña"} (${
+                                  event.desarrollos.length
+                                } desarrollo${
+                                  event.desarrollos.length > 1 ? "s" : ""
+                                })`}
+                              >
+                                <p className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-semibold">
+                                  {event.desarrollador
+                                    ?.split(" ")[0]
+                                    .slice(0, 1)
+                                    .toUpperCase()}
+                                  {event.desarrollador
+                                    ?.split(" ")[1]
+                                    .slice(0, 1)
+                                    .toUpperCase()}
+                                </p>
+                                <div className="flex items-center gap-1">
+                                  {dateStatus.isStart && (
+                                    <Play className="w-3 h-3 text-white" />
+                                  )}
+                                  {dateStatus.isEnd && (
+                                    <Flag className="w-3 h-3 text-white" />
+                                  )}
+                                  <div
+                                    className={`rounded-full ring-2 ring-white ${getStatusColor(
+                                      getGroupStatus()
+                                    )} w-1 h-1 shadow-sm`}
+                                  ></div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                      </div>
+                      <div className="flex gap-2 px-2 mt-2">
+                        {groupedEvents
+                          .filter((event) =>
+                            event.desarrollos.some(
+                              (d) =>
+                                d.estado?.toLowerCase() === "incumplimiento"
+                            )
+                          )
+                          .slice(0, 6)
+                          .map((event, idx) => {
+                            const dateStatus = isDateStartOrEnd(day, event);
+                            const isFiltered =
+                              selectedCampaign &&
+                              event.campana !== selectedCampaign;
+                            // Obtener el estado más relevante (priorizar en proceso y finalizado)
+                            const getGroupStatus = () => {
+                              const estados = event.desarrollos.map(
+                                (d) => d.estado
+                              );
+                              if (
+                                estados.some(
+                                  (e) => e?.toLowerCase() === "en proceso"
+                                )
+                              )
+                                return "En Proceso";
+                              if (
+                                estados.some(
+                                  (e) => e?.toLowerCase() === "finalizado"
+                                )
+                              )
+                                return "Finalizado";
+                              if (
+                                estados.some(
+                                  (e) => e?.toLowerCase() === "entregado"
+                                )
+                              )
+                                return "Entregado";
+                              return estados[0] || null;
+                            };
+                            return (
+                              <button
+                                key={idx}
+                                onClick={() => setSelectedEvent(event)}
+                                className={`
+                              flex-1 min-w-0
+                              text-left text-[8px] px-2 py-1 rounded-lg flex justify-between items-center gap-1
+                              ${getCampaignColor(
+                                event.campana
+                              )} text-white ring-2 ring-red-500
+                              hover:opacity-90 transition-all shadow-md hover:shadow-lg transform hover:scale-105 
+                              truncate
+                              ${
+                                isFiltered
+                                  ? "opacity-30 grayscale saturate-0"
+                                  : ""
+                              }
+                            `}
+                                title={`${event.campana || "Sin campaña"} (${
+                                  event.desarrollos.length
+                                } desarrollo${
+                                  event.desarrollos.length > 1 ? "s" : ""
+                                })`}
+                              ></button>
+                            );
+                          })}
+                      </div>
+                      {groupedEvents.length > 6 && (
                         <div className="text-xs font-bold text-gray-700 text-center mt-2 bg-gray-100 rounded py-1">
-                          +{eventsForDay.length - 6} más
+                          +{groupedEvents.length - 6} más
                         </div>
                       )}
                     </>
@@ -720,12 +1002,12 @@ export default function Calendar({
           onClick={() => setSelectedEvent(null)}
         >
           <div
-            className="bg-white rounded-2xl p-8 max-w-3xl w-full max-h-[80vh] overflow-y-auto shadow-2xl border-2 border-gray-100"
+            className="bg-white rounded-2xl p-8 max-w-6xl w-full max-h-[85vh] overflow-y-auto shadow-2xl border-2 border-gray-100"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-start mb-6">
               <h3 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                {selectedEvent.nombre || "Sin nombre"}
+                {selectedEvent.campana || "Sin campaña"}
               </h3>
               <button
                 onClick={() => setSelectedEvent(null)}
@@ -736,65 +1018,35 @@ export default function Calendar({
             </div>
 
             <div className="space-y-4">
-              {selectedEvent.campana && (
-                <div className="bg-linear-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
-                  <span className="font-bold text-blue-900 text-sm uppercase tracking-wide">
-                    Campaña
-                  </span>
-                  <p className="text-gray-800 font-semibold text-lg mt-1">
-                    {selectedEvent.campana}
-                  </p>
-                </div>
-              )}
-              {selectedEvent.coordinador && (
-                <div className="bg-linear-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
-                  <span className="font-bold text-purple-900 text-sm uppercase tracking-wide">
-                    Coordinador
-                  </span>
-                  <p className="text-gray-800 font-semibold text-lg mt-1">
-                    {selectedEvent.coordinador}
-                  </p>
-                </div>
-              )}
-              {selectedEvent.desarrollador && (
-                <div className="bg-linear-to-r from-green-50 to-teal-50 rounded-xl p-4 border border-green-200">
-                  <span className="font-bold text-green-900 text-sm uppercase tracking-wide mb-2 block">
-                    Desarrollador
-                  </span>
-                  <span
-                    className={`inline-block px-4 py-2 rounded-lg text-white font-bold text-base shadow-md ${getDeveloperColor(
-                      selectedEvent.desarrollador
-                    )}`}
-                  >
-                    {selectedEvent.desarrollador}
-                  </span>
-                </div>
-              )}
-              {selectedEvent.desarrollo && (
-                <div className="bg-linear-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-200">
-                  <span className="font-bold text-yellow-900 text-sm uppercase tracking-wide">
-                    Aplicativo
-                  </span>
-                  <p className="text-gray-800 font-semibold text-lg mt-1">
-                    {selectedEvent.desarrollo}
-                  </p>
-                </div>
-              )}
-              {selectedEvent.estado && (
-                <div className="bg-linear-to-r from-gray-50 to-slate-50 rounded-xl p-4 border border-gray-200">
-                  <span className="font-bold text-gray-900 text-sm uppercase tracking-wide mb-2 block">
-                    Estado
-                  </span>
-                  <span
-                    className={`inline-block px-4 py-2 rounded-lg text-white font-bold text-base shadow-md ${getStatusColor(
-                      selectedEvent.estado
-                    )}`}
-                  >
-                    {selectedEvent.estado}
-                  </span>
-                </div>
-              )}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              {/* Información común de la campaña */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {selectedEvent.coordinador && (
+                  <div className="bg-linear-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
+                    <span className="font-bold text-purple-900 text-sm uppercase tracking-wide">
+                      Coordinador
+                    </span>
+                    <p className="text-gray-800 font-semibold text-lg mt-1">
+                      {selectedEvent.coordinador}
+                    </p>
+                  </div>
+                )}
+                {selectedEvent.desarrollador && (
+                  <div className="bg-linear-to-r from-green-50 to-teal-50 rounded-xl p-4 border border-green-200">
+                    <span className="font-bold text-green-900 text-sm uppercase tracking-wide mb-2 block">
+                      Desarrollador
+                    </span>
+                    <span
+                      className={`inline-block px-4 py-2 rounded-lg text-white font-bold text-base shadow-md ${getDeveloperColor(
+                        selectedEvent.desarrollador
+                      )}`}
+                    >
+                      {selectedEvent.desarrollador}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {selectedEvent.fechaMaterial && (
                   <div className="bg-white rounded-xl p-4 border-2 border-green-300 shadow-md">
                     <span className="font-bold text-green-900 text-xs uppercase tracking-wide block mb-2">
@@ -826,16 +1078,86 @@ export default function Calendar({
                   </div>
                 )}
               </div>
-              {selectedEvent.observaciones && (
-                <div className="bg-linear-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200 w-full">
-                  <span className="font-bold text-blue-900 text-sm uppercase tracking-wide">
-                    Notas
+
+              {/* Tabla de desarrollos */}
+              <div className="bg-linear-to-r from-indigo-50 to-blue-50 rounded-xl p-6 border border-indigo-200">
+                <h4 className="text-xl font-bold text-indigo-900 mb-4 flex items-center gap-2">
+                  <span>📋</span>
+                  Desarrollos de la Campaña
+                  <span className="text-sm font-normal text-gray-600">
+                    ({selectedEvent.desarrollos.length} total
+                    {selectedEvent.desarrollos.length > 1 ? "es" : ""})
                   </span>
-                  <p className="text-gray-800 font-semibold text-lg mt-1 w-full wrap-break-word whitespace-normal">
-                    {selectedEvent.observaciones}
-                  </p>
+                </h4>
+
+                <div className="space-y-4">
+                  {selectedEvent.desarrollos.map((desarrollo, idx) => (
+                    <div
+                      key={idx}
+                      className="bg-white rounded-lg p-5 shadow-md border-2 border-gray-200 hover:border-indigo-300 transition-all"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h5 className="text-lg font-bold text-gray-900 mb-1">
+                            {desarrollo.nombre || "Sin nombre"}
+                          </h5>
+                          {desarrollo.desarrollo && (
+                            <p className="text-sm text-gray-600 flex items-center gap-2">
+                              <span className="font-semibold">Tipo:</span>
+                              <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-md font-medium">
+                                {desarrollo.desarrollo}
+                              </span>
+                            </p>
+                          )}
+                        </div>
+                        {desarrollo.estado && (
+                          <span
+                            className={`px-3 py-1.5 rounded-lg text-white font-bold text-sm shadow-md ${getStatusColor(
+                              desarrollo.estado
+                            )}`}
+                          >
+                            {desarrollo.estado}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                        {desarrollo.segmento && (
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-gray-700 text-sm">
+                              Segmento:
+                            </span>
+                            <span className="text-gray-900 bg-blue-50 px-2 py-1 rounded">
+                              {desarrollo.segmento}
+                            </span>
+                          </div>
+                        )}
+                        {desarrollo.cantidad && (
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-gray-700 text-sm">
+                              Cantidad:
+                            </span>
+                            <span className="text-gray-900 bg-green-50 px-2 py-1 rounded font-medium">
+                              {desarrollo.cantidad}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {desarrollo.observaciones && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <span className="font-semibold text-gray-700 text-sm block mb-1">
+                            Observaciones:
+                          </span>
+                          <p className="text-gray-800 text-sm bg-gray-50 p-2 rounded">
+                            {desarrollo.observaciones}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
