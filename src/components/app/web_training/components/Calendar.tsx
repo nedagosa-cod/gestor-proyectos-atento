@@ -547,15 +547,42 @@ export default function Calendar({
     <div className="w-full h-full flex flex-col">
       {/* Header del calendario */}
       <div className="flex flex-col gap-4 mb-8 px-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent capitalize">
-            {format(currentMonth, "MMMM yyyy", { locale: es })}
-          </h2>
+        <div className="flex items-center justify-between gap-4">
+          <div className=" flex flex-col items-center justify-center">
+            <h2 className="text-2xl  font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent capitalize text-center">
+              {format(currentMonth, "MMMM yyyy", { locale: es })}
+            </h2>
+            {/* Cambia mes */}
+            <div className="flex gap-3">
+              <button
+                onClick={prevMonth}
+                className="p-3 bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-lg transition-all hover:shadow-lg transform hover:scale-105"
+                aria-label="Mes anterior"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setCurrentMonth(new Date())}
+                className="px-6 py-3 bg-linear-to-r from-purple-500 to-pink-600 text-white rounded-lg transition-all hover:shadow-lg transform hover:scale-105 font-bold"
+              >
+                Hoy
+              </button>
+              <button
+                onClick={nextMonth}
+                className="p-3 bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-lg transition-all hover:shadow-lg transform hover:scale-105"
+                aria-label="Mes siguiente"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
 
           {/* Leyenda de colores */}
-          <div className="bg-white rounded-lg shadow-md px-4 py-2 border border-gray-200">
-            <div className="flex items-center gap-6">
-              <span className="text-xs font-bold text-gray-600">Estados:</span>
+          <div className="bg-white rounded-lg shadow-md px-4 py-2 border border-gray-200 w-full">
+            <div className="flex items-center gap-4 2xl:gap-6">
+              <span className="text-xs font-bold text-gray-600 hidden 2xl:block">
+                Estados:
+              </span>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm"></div>
@@ -590,7 +617,7 @@ export default function Calendar({
               <div className="h-6 w-px bg-gray-300"></div>
               {/* Controles de visibilidad */}
               <div className="flex gap-4 items-center ">
-                <span className="text-sm font-bold text-gray-700">
+                <span className="text-xs font-bold text-gray-700 hidden 2xl:block">
                   Mostrar:
                 </span>
 
@@ -603,7 +630,7 @@ export default function Calendar({
                     className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
                   />
                   <CircleFadingArrowUp className="w-4 h-4 text-blue-500" />
-                  <span className="text-sm font-medium text-gray-700">
+                  <span className="text-xs font-medium text-gray-700">
                     Actualizaciones
                   </span>
                 </label>
@@ -617,7 +644,7 @@ export default function Calendar({
                     className="w-4 h-4 text-red-600 rounded focus:ring-red-500 cursor-pointer"
                   />
                   <ShieldX className="w-4 h-4 text-red-500" />
-                  <span className="text-sm font-medium text-gray-700">
+                  <span className="text-xs font-medium text-gray-700">
                     Incumplimientos
                   </span>
                 </label>
@@ -655,30 +682,6 @@ export default function Calendar({
               </div>
             )}
           </div>
-
-          {/* Cambia mes */}
-          <div className="flex gap-3">
-            <button
-              onClick={prevMonth}
-              className="p-3 bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-lg transition-all hover:shadow-lg transform hover:scale-105"
-              aria-label="Mes anterior"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setCurrentMonth(new Date())}
-              className="px-6 py-3 bg-linear-to-r from-purple-500 to-pink-600 text-white rounded-lg transition-all hover:shadow-lg transform hover:scale-105 font-bold"
-            >
-              Hoy
-            </button>
-            <button
-              onClick={nextMonth}
-              className="p-3 bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-lg transition-all hover:shadow-lg transform hover:scale-105"
-              aria-label="Mes siguiente"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
         </div>
       </div>
 
@@ -689,7 +692,7 @@ export default function Calendar({
           {weekDays.map((day) => (
             <div
               key={day}
-              className="text-center font-bold text-sm text-white bg-linear-to-r from-blue-500 to-indigo-600 py-3 rounded-lg shadow-md"
+              className="text-center font-bold text-sm text-white bg-linear-to-r from-blue-500 to-indigo-600 2xl:py-3 py-1 rounded-lg shadow-md"
             >
               {day}
             </div>
@@ -826,7 +829,7 @@ export default function Calendar({
                                   onClick={() => setSelectedEvent(event)}
                                   className={`
                               flex-1 min-w-0
-                              text-left text-[10px] px-2 py-1.5 rounded-lg flex justify-between items-center gap-1
+                              text-left text-[10px] 2xl:px-2 px-1 py-1.5 rounded-lg flex justify-between items-center gap-1
                               ${getCampaignColor(event.campana)} text-white
                               hover:opacity-90 transition-all shadow-md hover:shadow-lg transform hover:scale-105 
                               truncate
@@ -842,7 +845,7 @@ export default function Calendar({
                                     event.desarrollos.length > 1 ? "s" : ""
                                   })`}
                                 >
-                                  <p className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-semibold">
+                                  <p className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-semibold hidden 2xl:block">
                                     {event.desarrollador
                                       ?.split(" ")[0]
                                       .slice(0, 1)
@@ -854,15 +857,15 @@ export default function Calendar({
                                   </p>
                                   <div className="flex items-center gap-1">
                                     {dateStatus.isStart && (
-                                      <Play className="w-3 h-3 text-white" />
+                                      <Play className="2xl:w-3 2xl:h-3 w-2 h-2 text-white" />
                                     )}
                                     {dateStatus.isEnd && (
-                                      <Flag className="w-3 h-3 text-white" />
+                                      <Flag className="2xl:w-3 2xl:h-3 w-2 h-2 text-white" />
                                     )}
                                     <div
-                                      className={`rounded-full ring-2 ring-white ${getStatusColor(
+                                      className={`rounded-full 2xl:ring-2 ring-1 ring-white ${getStatusColor(
                                         getGroupStatus()
-                                      )} w-2 h-2 shadow-sm`}
+                                      )} 2xl:w-2 2xl:h-2 w-1.5 h-1.5 shadow-sm`}
                                     ></div>
                                   </div>
                                 </button>
@@ -871,7 +874,7 @@ export default function Calendar({
                         </div>
                         {showActualizaciones && (
                           <div className="flex gap-1 px-2 mt-1">
-                            <CircleFadingArrowUp className="w-3 h-3 text-blue-500 relative -left-2" />
+                            <CircleFadingArrowUp className="2xl:w-3 2xl:h-3 w-2 h-2 text-blue-500 relative -left-2" />
                             {groupedEvents
                               .filter(
                                 (event) =>
@@ -923,7 +926,7 @@ export default function Calendar({
                                     onClick={() => setSelectedEvent(event)}
                                     className={`
                               flex-1 min-w-0
-                              text-left text-[8px] px-2 py-0.2 rounded-lg flex justify-between items-center gap-1
+                              text-left text-[8px] 2xl:px-2 px-1 py-0.2 rounded-lg flex justify-between items-center gap-1
                               ${getCampaignColor(event.campana)} text-white
                               hover:opacity-90 transition-all shadow-md hover:shadow-lg transform hover:scale-105 
                               truncate
@@ -939,7 +942,7 @@ export default function Calendar({
                                       event.desarrollos.length > 1 ? "s" : ""
                                     })`}
                                   >
-                                    <p className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-semibold">
+                                    <p className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-semibold hidden 2xl:block">
                                       {event.desarrollador
                                         ?.split(" ")[0]
                                         .slice(0, 1)
@@ -951,15 +954,15 @@ export default function Calendar({
                                     </p>
                                     <div className="flex items-center gap-1">
                                       {dateStatus.isStart && (
-                                        <Play className="w-3 h-3 text-white" />
+                                        <Play className="2xl:w-3 2xl:h-3 w-2 h-2 text-white" />
                                       )}
                                       {dateStatus.isEnd && (
-                                        <Flag className="w-3 h-3 text-white" />
+                                        <Flag className="2xl:w-3 2xl:h-3 w-2 h-2 text-white" />
                                       )}
                                       <div
-                                        className={`rounded-full ring-2 ring-white ${getStatusColor(
+                                        className={`rounded-full 2xl:ring-2 ring-1 ring-white ${getStatusColor(
                                           getGroupStatus()
-                                        )} w-1 h-1 shadow-sm`}
+                                        )} 2xl:w-2 2xl:h-2 w-1.5 h-1.5 shadow-sm`}
                                       ></div>
                                     </div>
                                   </button>
@@ -969,7 +972,7 @@ export default function Calendar({
                         )}
                         {showIncumplimientos && (
                           <div className="flex gap-2 px-2 mt-2">
-                            <ShieldX className="w-3 h-3 text-red-500 relative -left-2" />
+                            <ShieldX className="2xl:w-3 2xl:h-3 w-2 h-2 text-red-500 relative -left-2" />
                             {groupedEvents
                               .filter((event) =>
                                 event.desarrollos.some(
@@ -990,10 +993,10 @@ export default function Calendar({
                                     onClick={() => setSelectedEvent(event)}
                                     className={`
                               flex-1 min-w-0
-                              text-left text-[8px] px-2 py-1 rounded-lg flex justify-between items-center gap-1
+                              text-left text-[8px] 2xl:px-2 px-1 py-1 rounded-lg flex justify-between items-center gap-1
                               ${getCampaignColor(
                                 event.campana
-                              )} text-white ring-2 ring-red-500
+                              )} text-white 2xl:ring-2 ring-1 ring-red-500
                               hover:opacity-90 transition-all shadow-md hover:shadow-lg transform hover:scale-105 
                               truncate
                               ${

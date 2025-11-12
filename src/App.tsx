@@ -1,5 +1,5 @@
 import { Route, Routes } from "react-router-dom";
-import Home from "@/components/app/Home";
+import Home from "@/components/app/page";
 import Simulator from "@/components/app/simulator/Simulator";
 import Navbar from "@/components/web/Navbar";
 import WebTraining from "./components/app/web_training/WebTraining";

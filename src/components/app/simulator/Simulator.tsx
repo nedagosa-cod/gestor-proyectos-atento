@@ -36,6 +36,7 @@ export default function Simulator() {
   const [activeTab, setActiveTab] = useState<Tab>("calendar");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -257,18 +258,13 @@ export default function Simulator() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-indigo-50 p-8 flex flex-col">
-      <div className="mb-8 bg-white rounded-xl shadow-md p-6 border border-gray-100">
-        <h1 className="text-4xl font-bold mb-3 bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-          Calendario de Entrenamientos
-        </h1>
-        <p className="text-gray-600 text-lg">
-          Visualiza los procesos organizados por sus fechas de inicio y fin
-        </p>
-      </div>
-
       {/* Sistema de pestañas */}
-      <div className="mb-6 bg-white rounded-xl shadow-md border border-gray-100">
-        <nav className="flex space-x-1 p-2">
+      <div className="mb-2 bg-white rounded-xl shadow-md border border-gray-100 flex">
+        <h1 className="text-6xl font-bold mb-4 bg-linear-to-r from-orange-600 to-orange-400 bg-clip-text text-transparent mr-10 ml-4">
+          Simulator
+        </h1>
+
+        <nav className="flex space-x-1 p-2 w-full">
           <button
             onClick={() => setActiveTab("calendar")}
             className={`${
@@ -689,6 +685,279 @@ export default function Simulator() {
       {!loading && !error && data.length === 0 && (
         <div className="flex-1 flex items-center justify-center">
           <p className="text-gray-500">No hay datos disponibles</p>
+        </div>
+      )}
+
+      {/* Botón de ayuda flotante */}
+      <button
+        onClick={() => setShowHelp(true)}
+        className="fixed bottom-8 right-8 bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-full w-16 h-16 shadow-2xl hover:shadow-3xl transform hover:scale-110 transition-all duration-300 flex items-center justify-center font-bold text-2xl z-50 border-4 border-white"
+        title="Ayuda e Instrucciones"
+      >
+        ?
+      </button>
+
+      {/* Modal de ayuda */}
+      {showHelp && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Encabezado */}
+            <div className="sticky top-0 bg-linear-to-r from-blue-500 to-indigo-600 text-white p-6 rounded-t-2xl flex justify-between items-center shadow-lg z-10">
+              <div>
+                <h2 className="text-3xl font-bold mb-2">📚 Guía de Uso</h2>
+                <p className="text-blue-100 text-sm">
+                  Aprende a usar todas las funcionalidades del sistema
+                </p>
+              </div>
+              <button
+                onClick={() => setShowHelp(false)}
+                className="text-white hover:bg-white hover:text-blue-600 rounded-full w-10 h-10 flex items-center justify-center transition-all text-2xl font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Contenido */}
+            <div className="p-8 space-y-6">
+              {/* Sección de Pestañas */}
+              <div className="bg-white rounded-xl p-6 border-2 border-gray-200 shadow-sm">
+                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  📑 Las Dos Pestañas Principales
+                </h3>
+
+                {/* Pestaña Calendario */}
+                <div className="mb-6 bg-linear-to-r from-blue-50 to-blue-100 rounded-lg p-5 border-l-4 border-blue-500">
+                  <h4 className="text-lg font-bold text-blue-900 mb-3 flex items-center gap-2">
+                    📅 Pestaña: Calendario
+                  </h4>
+                  <ul className="space-y-2 text-gray-700">
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-600 font-bold mt-1">•</span>
+                      <div>
+                        <strong>Vista del calendario:</strong> Muestra todos los
+                        días del mes actual (excluyendo domingos).
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-600 font-bold mt-1">•</span>
+                      <div>
+                        <strong>Días con procesos:</strong> Los días con
+                        procesos activos se destacan con colores y puntos
+                        indicadores.
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-600 font-bold mt-1">•</span>
+                      <div>
+                        <strong>Navegación:</strong> Usa las flechas ◀ ▶ en el
+                        calendario para cambiar de mes.
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-600 font-bold mt-1">•</span>
+                      <div>
+                        <strong>Selección de día:</strong> Haz clic en cualquier
+                        día para ver los procesos activos en ese día en el panel
+                        inferior derecho.
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-600 font-bold mt-1">•</span>
+                      <div>
+                        <strong>Campañas Activas:</strong> En el panel inferior
+                        izquierdo verás un resumen de todas las campañas activas
+                        en el mes actual.
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Pestaña Consulta de Campañas */}
+                <div className="bg-linear-to-r from-purple-50 to-pink-100 rounded-lg p-5 border-l-4 border-purple-500">
+                  <h4 className="text-lg font-bold text-purple-900 mb-3 flex items-center gap-2">
+                    📊 Pestaña: Consulta de Campañas
+                  </h4>
+                  <ul className="space-y-2 text-gray-700">
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-600 font-bold mt-1">•</span>
+                      <div>
+                        <strong>Buscador:</strong> Utiliza el campo de búsqueda
+                        para filtrar campañas por nombre.
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-600 font-bold mt-1">•</span>
+                      <div>
+                        <strong>Lista de campañas:</strong> En la columna
+                        izquierda verás todas las campañas disponibles con el
+                        número de procesos.
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-600 font-bold mt-1">•</span>
+                      <div>
+                        <strong>Detalles de campaña:</strong> Al hacer clic en
+                        una campaña, verás estadísticas completas: procesos
+                        totales, completados, en curso, pendientes,
+                        desarrolladores, coordinadores y aplicativos.
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-600 font-bold mt-1">•</span>
+                      <div>
+                        <strong>Tabla de procesos:</strong> Muestra todos los
+                        procesos de la campaña seleccionada con información
+                        detallada como estado, desarrollador, coordinador,
+                        aplicativo y fechas.
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Sección de Estados */}
+              <div className="bg-white rounded-xl p-6 border-2 border-gray-200 shadow-sm">
+                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  🚦 Estados de los Procesos
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-linear-to-br from-green-100 to-green-200 rounded-lg p-4 border-2 border-green-400">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">✅</span>
+                      <span className="font-bold text-green-900">
+                        Completado
+                      </span>
+                    </div>
+                    <p className="text-sm text-green-800">
+                      El proceso ha finalizado exitosamente
+                    </p>
+                  </div>
+                  <div className="bg-linear-to-br from-yellow-100 to-orange-200 rounded-lg p-4 border-2 border-yellow-400">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">⏳</span>
+                      <span className="font-bold text-orange-900">
+                        En Curso
+                      </span>
+                    </div>
+                    <p className="text-sm text-orange-800">
+                      El proceso está actualmente en desarrollo
+                    </p>
+                  </div>
+                  <div className="bg-linear-to-br from-gray-100 to-gray-200 rounded-lg p-4 border-2 border-gray-400">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">📋</span>
+                      <span className="font-bold text-gray-900">Pendiente</span>
+                    </div>
+                    <p className="text-sm text-gray-800">
+                      El proceso aún no ha comenzado
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Consejos y Tips */}
+              <div className="bg-linear-to-br from-amber-50 to-yellow-50 rounded-xl p-6 border-2 border-amber-300">
+                <h3 className="text-xl font-bold text-amber-900 mb-4 flex items-center gap-2">
+                  💡 Consejos Útiles
+                </h3>
+                <ul className="space-y-3 text-gray-700">
+                  <li className="flex items-start gap-3">
+                    <span className="text-2xl">🎨</span>
+                    <div>
+                      <strong>Colores en el calendario:</strong> Los días se
+                      colorean según la cantidad de procesos activos. Más
+                      intenso = más procesos.
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-2xl">🔄</span>
+                    <div>
+                      <strong>Actualización automática:</strong> Los datos se
+                      cargan automáticamente desde Google Sheets al abrir la
+                      página.
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-2xl">📱</span>
+                    <div>
+                      <strong>Responsive:</strong> La interfaz se adapta a
+                      diferentes tamaños de pantalla (móvil, tablet,
+                      escritorio).
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-2xl">🔍</span>
+                    <div>
+                      <strong>Búsqueda rápida:</strong> En la pestaña de
+                      campañas, puedes buscar por nombre para encontrar
+                      rápidamente lo que necesitas.
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Atajos y funciones rápidas */}
+              <div className="bg-white rounded-xl p-6 border-2 border-indigo-200 shadow-sm">
+                <h3 className="text-xl font-bold text-indigo-900 mb-4 flex items-center gap-2">
+                  ⚡ Funciones Rápidas
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl">👆</div>
+                    <div>
+                      <p className="font-semibold text-gray-900">Clic en día</p>
+                      <p className="text-sm text-gray-600">
+                        Ver procesos activos ese día
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl">📅</div>
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        Flechas calendario
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Navegar entre meses
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl">🔍</div>
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        Buscar campaña
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Filtrar por nombre en tiempo real
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl">📊</div>
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        Clic en campaña
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Ver estadísticas completas
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer del modal */}
+            <div className="sticky bottom-0 bg-linear-to-r from-gray-100 to-gray-200 p-6 rounded-b-2xl flex justify-center border-t-2 border-gray-300">
+              <button
+                onClick={() => setShowHelp(false)}
+                className="bg-linear-to-r from-blue-500 to-indigo-600 text-white px-8 py-3 rounded-xl font-bold text-lg hover:from-blue-600 hover:to-indigo-700 transition-all transform hover:scale-105 shadow-lg"
+              >
+                ¡Entendido! 🚀
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

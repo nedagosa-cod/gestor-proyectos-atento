@@ -206,14 +206,14 @@ export default function Calendar({
     });
   };
 
-  // Paleta de colores para desarrolladores
-  const developerColors = [
+  // Paleta de colores para campañas (50+ colores distintos)
+  const campaignColors = [
     "bg-blue-500",
     "bg-green-500",
     "bg-pink-500",
     "bg-indigo-500",
-    "bg-purple-500",
     "bg-red-500",
+    "bg-purple-500",
     "bg-yellow-500",
     "bg-teal-500",
     "bg-orange-500",
@@ -222,15 +222,77 @@ export default function Calendar({
     "bg-amber-500",
     "bg-emerald-500",
     "bg-violet-500",
-    "bg-fuchsia-500",
+    "bg-sky-500",
     "bg-rose-500",
+    "bg-green-600",
     "bg-sky-500",
     "bg-slate-500",
+    "bg-blue-600",
+    "bg-pink-600",
+    "bg-red-900",
+    "bg-indigo-600",
+    "bg-purple-600",
+    "bg-red-800",
+    "bg-teal-600",
+    "bg-yellow-400",
+    "bg-cyan-600",
+    "bg-blue-900",
+    "bg-amber-600",
+    "bg-emerald-600",
+    "bg-red-500",
+    "bg-fuchsia-600",
+    "bg-rose-600",
+    "bg-red-700",
+    "bg-blue-700",
+    "bg-green-700",
+    "bg-cyan-500",
+    "bg-indigo-700",
+    "bg-red-900",
+    "bg-purple-700",
+    "bg-yellow-700",
+    "bg-teal-700",
+    "bg-orange-700",
+    "bg-cyan-700",
+    "bg-lime-700",
+    "bg-amber-700",
+    "bg-emerald-700",
+    "bg-violet-700",
+    "bg-fuchsia-700",
+    "bg-rose-700",
+    "bg-sky-700",
   ];
 
-  // Función para obtener un color consistente para cada desarrollador
+  // Función para obtener un color consistente para cada campaña
+  const getCampaignColor = (campana: string | null): string => {
+    if (!campana) return "bg-gray-500";
+
+    // Generar un hash simple del nombre de la campaña
+    let hash = 0;
+    for (let i = 0; i < campana.length; i++) {
+      hash = campana.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    // Usar el hash para seleccionar un color de la paleta
+    const index = Math.abs(hash) % campaignColors.length;
+    return campaignColors[index];
+  };
+
+  // Función para obtener un color consistente para cada desarrollador (usada en novedades)
   const getDeveloperColor = (desarrollador: string | null): string => {
     if (!desarrollador) return "bg-gray-500";
+
+    const developerColors = [
+      "bg-green-500",
+      "bg-pink-500",
+      "bg-red-500",
+      "bg-indigo-500",
+      "bg-purple-500",
+      "bg-yellow-500",
+      "bg-teal-500",
+      "bg-orange-500",
+      "bg-cyan-500",
+      "bg-blue-500",
+    ];
 
     // Generar un hash simple del nombre del desarrollador
     let hash = 0;
@@ -346,15 +408,6 @@ export default function Calendar({
     }
   };
 
-  // Obtener lista única de desarrolladores
-  const uniqueDevelopers = Array.from(
-    new Set(
-      data
-        .map((record) => record.desarrollador)
-        .filter((dev): dev is string => !!dev)
-    )
-  ).sort();
-
   // Obtener campañas activas del mes actual
   const getActiveCampaigns = (): string[] => {
     const campaignsInMonth = data.filter((record) => {
@@ -431,13 +484,37 @@ export default function Calendar({
     <div className="w-full h-full flex flex-col">
       {/* Header del calendario */}
       <div className="flex flex-col gap-4 mb-8 px-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent capitalize">
-            {format(currentMonth, "MMMM yyyy", { locale: es })}
-          </h2>
+        <div className="flex items-center justify-between gap-8">
+          <div className=" flex flex-col items-center justify-center">
+            <h2 className="text-2xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent capitalize text-center mb-4">
+              {format(currentMonth, "MMMM yyyy", { locale: es })}
+            </h2>
+            <div className="flex gap-3">
+              <button
+                onClick={prevMonth}
+                className="p-3 bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-lg transition-all hover:shadow-lg transform hover:scale-105"
+                aria-label="Mes anterior"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setCurrentMonth(new Date())}
+                className="px-6 py-3 bg-linear-to-r from-purple-500 to-pink-600 text-white rounded-lg transition-all hover:shadow-lg transform hover:scale-105 font-bold"
+              >
+                Hoy
+              </button>
+              <button
+                onClick={nextMonth}
+                className="p-3 bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-lg transition-all hover:shadow-lg transform hover:scale-105"
+                aria-label="Mes siguiente"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
 
           {/* Leyenda de colores */}
-          <div className="bg-white rounded-lg shadow-md px-4 py-2 border border-gray-200">
+          <div className="bg-white rounded-lg shadow-md px-4 py-2 border border-gray-200 w-full">
             <div className="flex items-center gap-6">
               <span className="text-xs font-bold text-gray-600">Estados:</span>
               <div className="flex items-center gap-4">
@@ -459,29 +536,6 @@ export default function Calendar({
                 </div>
               </div>
               <div className="h-6 w-px bg-gray-300"></div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-gray-600">
-                  Desarrolladores:
-                </span>
-                <div className="flex items-center gap-2 flex-wrap max-h-8 overflow-y-auto">
-                  {uniqueDevelopers.map((developer) => (
-                    <div
-                      key={developer}
-                      className="flex items-center gap-1.5 bg-gray-50 px-2 py-0.5 rounded-full"
-                    >
-                      <div
-                        className={`w-2.5 h-2.5 rounded-full ${getDeveloperColor(
-                          developer
-                        )} shadow-sm`}
-                      ></div>
-                      <span className="text-xs text-gray-700 font-medium">
-                        {developer}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="h-6 w-px bg-gray-300"></div>
 
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1">
@@ -496,7 +550,7 @@ export default function Calendar({
             </div>
             {/* Campañas activas del mes */}
             {activeCampaigns.length > 0 && (
-              <div className="bg-blue-500 rounded-lg shadow-md px-4 py-3 border border-gray-200 mt-2 flex items-center justify-center">
+              <div className="bg-stone-900 rounded-lg shadow-md px-4 py-3 border border-gray-200 mt-2 flex items-center justify-center">
                 <div className="flex items-center gap-2 flex-wrap">
                   {activeCampaigns.map((campaign) => (
                     <button
@@ -506,10 +560,12 @@ export default function Calendar({
                           selectedCampaign === campaign ? null : campaign
                         )
                       }
-                      className={`px-3 rounded shadow-sm hover:shadow-md transition-all transform hover:scale-105 cursor-pointer ${
+                      className={`px-3 py-1 rounded shadow-sm hover:shadow-md transition-all transform hover:scale-105 cursor-pointer ${
                         selectedCampaign === campaign
-                          ? "bg-linear-to-r from-purple-600 to-pink-600 text-white ring-2 ring-purple-400"
-                          : "ring-1 ring-gray-300 bg-white"
+                          ? "bg-white text-gray-800 ring-2 ring-white"
+                          : `${getCampaignColor(
+                              campaign
+                            )} text-white ring-1 ring-white/30`
                       }`}
                       title={
                         selectedCampaign === campaign
@@ -526,28 +582,6 @@ export default function Calendar({
           </div>
 
           {/* Cambia mes */}
-          <div className="flex gap-3">
-            <button
-              onClick={prevMonth}
-              className="p-3 bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-lg transition-all hover:shadow-lg transform hover:scale-105"
-              aria-label="Mes anterior"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setCurrentMonth(new Date())}
-              className="px-6 py-3 bg-linear-to-r from-purple-500 to-pink-600 text-white rounded-lg transition-all hover:shadow-lg transform hover:scale-105 font-bold"
-            >
-              Hoy
-            </button>
-            <button
-              onClick={nextMonth}
-              className="p-3 bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-lg transition-all hover:shadow-lg transform hover:scale-105"
-              aria-label="Mes siguiente"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
         </div>
       </div>
 
@@ -659,9 +693,7 @@ export default function Calendar({
                               onClick={() => setSelectedEvent(event)}
                               className={`
                               text-left text-[10px] px-2 py-1.5 rounded-lg flex justify-between items-center gap-1
-                              ${getDeveloperColor(
-                                event.desarrollador
-                              )} text-white
+                              ${getCampaignColor(event.campana)} text-white
                               hover:opacity-90 transition-all shadow-md hover:shadow-lg transform hover:scale-105 
                               truncate
                               ${
@@ -676,7 +708,7 @@ export default function Calendar({
                               }`}
                             >
                               <p className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-semibold">
-                                {event.campana || "Sin dev"}
+                                {event.campana || "Sin campaña"}
                               </p>
                               <div className="flex items-center gap-1">
                                 {dateStatus.isStart && (
